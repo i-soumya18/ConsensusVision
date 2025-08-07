@@ -56,8 +56,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
               // Input area
               MessageInputWidget(
-                onSendMessage: (message, images) {
-                  chatProvider.sendMessage(content: message, images: images);
+                onSendMessage: (message, images, {String? promptTemplate}) {
+                  chatProvider.sendMessage(
+                    content: message,
+                    images: images,
+                    promptTemplate: promptTemplate,
+                  );
                   _scrollToBottom();
                 },
                 isLoading: chatProvider.isLoading,

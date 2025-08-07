@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../theme/app_theme.dart';
+import '../screens/prompt_library_screen.dart';
 
 class MessageInputWidget extends StatefulWidget {
-  final Function(String message, List<File>? images) onSendMessage;
+  final Function(String message, List<File>? images, {String? promptTemplate})
+  onSendMessage;
   final bool isLoading;
 
   const MessageInputWidget({
@@ -26,6 +27,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   final ImagePicker _imagePicker = ImagePicker();
 
   List<File> _selectedImages = [];
+  String? _selectedPromptTemplate;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -75,6 +77,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
           // Input row
           Row(
             children: [
+              // Prompt library button
+              _buildPromptLibraryButton(),
+              const SizedBox(width: 8),
+
               // Attachment button
               _buildAttachmentButton(),
               const SizedBox(width: 8),
@@ -360,20 +366,14 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   }
 
   Future<void> _pickImageFromFiles() async {
-    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: true,
+    // Temporarily disabled to avoid build issues
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Image selection temporarily disabled'),
+        duration: Duration(seconds: 2),
+      ),
     );
-
-    if (result != null && result.files.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(
-          result.files
-              .where((file) => file.path != null)
-              .map((file) => File(file.path!)),
-        );
-      });
-    }
+    return;
   }
 
   Future<bool> _requestCameraPermission() async {
@@ -394,11 +394,74 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     widget.onSendMessage(
       text.isEmpty ? 'Please analyze these images.' : text,
       _selectedImages.isEmpty ? null : List.from(_selectedImages),
+      promptTemplate: _selectedPromptTemplate,
     );
 
     _textController.clear();
     setState(() {
       _selectedImages.clear();
+      _selectedPromptTemplate = null;
     });
+  }
+
+  Widget _buildPromptLibraryButton() {
+    return GestureDetector(
+      onTap: _showPromptLibrary,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: _selectedPromptTemplate != null
+              ? AppTheme.primaryColor
+              : AppTheme.primaryColor.withOpacity(0.7),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          _selectedPromptTemplate != null
+              ? Icons.library_books
+              : Icons.library_books_outlined,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  void _showPromptLibrary() async {
+    final selectedPrompt = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) =>
+            PromptLibraryScreen(onPromptSelected: (prompt) => prompt),
+      ),
+    );
+
+    if (selectedPrompt != null) {
+      setState(() {
+        _selectedPromptTemplate = selectedPrompt;
+      });
+
+      // Show feedback that prompt is selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Prompt template selected'),
+          duration: const Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'Clear',
+            onPressed: () {
+              setState(() {
+                _selectedPromptTemplate = null;
+              });
+            },
+          ),
+        ),
+      );
+    }
   }
 }

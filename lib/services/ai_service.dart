@@ -7,6 +7,7 @@ abstract class AIService {
     required String query,
     List<File>? images,
     String? extractedText,
+    List<Map<String, dynamic>>? conversationHistory,
   });
   Future<bool> isAvailable();
 }

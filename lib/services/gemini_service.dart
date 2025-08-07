@@ -12,7 +12,7 @@ class GeminiService implements AIService {
   GeminiService({required this.apiKey});
 
   @override
-  String get modelName => 'Gemini 2.0 Flash';
+  String get modelName => 'Gemini 2.5 Flash';
 
   @override
   Future<bool> isAvailable() async {
@@ -32,13 +32,23 @@ class GeminiService implements AIService {
     required String query,
     List<File>? images,
     String? extractedText,
+    List<Map<String, dynamic>>? conversationHistory,
   }) async {
     try {
-      // Build content array for OpenAI-compatible format
+      // Build messages array with conversation history
+      final List<Map<String, dynamic>> messages = [];
+
+      // Add conversation history if provided
+      if (conversationHistory != null && conversationHistory.isNotEmpty) {
+        messages.addAll(conversationHistory);
+      }
+
+      // Build current message content
       final List<Map<String, dynamic>> content = [];
 
       // Add text content
-      content.add({'type': 'text', 'text': _buildPrompt(query, extractedText)});
+      final promptText = _buildPrompt(query, extractedText);
+      content.add({'type': 'text', 'text': promptText});
 
       // Add images if provided
       if (images != null && images.isNotEmpty) {
@@ -52,11 +62,12 @@ class GeminiService implements AIService {
         }
       }
 
+      // Add current user message
+      messages.add({'role': 'user', 'content': content});
+
       final requestBody = {
         'model': 'gemini-2.0-flash',
-        'messages': [
-          {'role': 'user', 'content': content},
-        ],
+        'messages': messages,
         'max_tokens': 2048,
         'temperature': 0.7,
       };

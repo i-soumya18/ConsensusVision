@@ -19,6 +19,7 @@ class AIEvaluationService {
   Future<EvaluationResult> processQueryWithEvaluation({
     required String query,
     List<File>? images,
+    List<Map<String, dynamic>>? conversationHistory,
   }) async {
     // Extract text from images if provided
     String? extractedText;
@@ -38,6 +39,7 @@ class AIEvaluationService {
           query: query,
           images: images,
           extractedText: extractedText,
+          conversationHistory: conversationHistory,
         ),
       );
     }

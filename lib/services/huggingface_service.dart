@@ -35,6 +35,7 @@ class HuggingFaceService implements AIService {
     required String query,
     List<File>? images,
     String? extractedText,
+    List<Map<String, dynamic>>? conversationHistory,
   }) async {
     try {
       // For text-based models, we'll use a conversational approach

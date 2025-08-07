@@ -5,6 +5,7 @@ import '../models/message.dart';
 import '../models/chat_session.dart';
 import '../services/database_service.dart';
 import '../services/ai_evaluation_service.dart';
+import '../services/prompt_library_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AIEvaluationService _aiEvaluationService;
@@ -117,6 +118,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> sendMessage({
     required String content,
     List<File>? images,
+    String? promptTemplate,
   }) async {
     if (_currentSession == null) {
       await createNewChatSession();
@@ -128,10 +130,19 @@ class ChatProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
+      // Process prompt template if provided
+      String finalContent = content;
+      if (promptTemplate != null && promptTemplate.isNotEmpty) {
+        finalContent = PromptLibraryService.processPromptTemplate(
+          promptTemplate,
+          content,
+        );
+      }
+
       // Create user message
       final userMessage = Message(
         id: _uuid.v4(),
-        content: content,
+        content: finalContent,
         imagePaths: images?.map((f) => f.path).toList() ?? [],
         timestamp: DateTime.now(),
         type: MessageType.user,
@@ -159,9 +170,16 @@ class ChatProvider extends ChangeNotifier {
       _currentMessages.add(aiMessage);
       notifyListeners();
 
-      // Process query with AI evaluation
+      // Build conversation history for context
+      final conversationHistory = _buildConversationHistory();
+
+      // Process query with AI evaluation and conversation context
       final evaluationResult = await _aiEvaluationService
-          .processQueryWithEvaluation(query: content, images: images);
+          .processQueryWithEvaluation(
+            query: finalContent,
+            images: images,
+            conversationHistory: conversationHistory,
+          );
 
       // Update AI message with result
       final updatedAiMessage = aiMessage.copyWith(
@@ -215,6 +233,52 @@ class ChatProvider extends ChangeNotifier {
       _setLoading(false);
       notifyListeners();
     }
+  }
+
+  // Build conversation history for context
+  List<Map<String, dynamic>> _buildConversationHistory() {
+    final history = <Map<String, dynamic>>[];
+
+    // Get the last 10 messages (5 exchanges) for context, excluding the current exchange
+    final messagesToInclude = _currentMessages.length > 2
+        ? _currentMessages.sublist(0, _currentMessages.length - 2)
+        : <Message>[];
+
+    // Take only the last 10 messages to keep context manageable
+    final recentMessages = messagesToInclude.length > 10
+        ? messagesToInclude.sublist(messagesToInclude.length - 10)
+        : messagesToInclude;
+
+    for (final message in recentMessages) {
+      final role = message.type == MessageType.user ? 'user' : 'assistant';
+
+      if (message.type == MessageType.user && message.imagePaths.isNotEmpty) {
+        // For user messages with images, create multimodal content
+        final content = <Map<String, dynamic>>[];
+        content.add({'type': 'text', 'text': message.content});
+
+        // Note: In a real implementation, you'd need to load and encode images
+        // For now, we'll just add a placeholder
+        for (final imagePath in message.imagePaths) {
+          content.add({
+            'type': 'text',
+            'text': '[Image was attached: $imagePath]',
+          });
+        }
+
+        history.add({'role': role, 'content': content});
+      } else {
+        // For text-only messages
+        history.add({
+          'role': role,
+          'content': [
+            {'type': 'text', 'text': message.content},
+          ],
+        });
+      }
+    }
+
+    return history;
   }
 
   Future<void> retryLastMessage() async {
