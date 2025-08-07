@@ -134,9 +134,10 @@ class GeminiService implements AIService {
     }
 
     prompt += '''
-Please analyze the provided content and answer the user's query accurately. 
+Please analyze the provided content and answer the user's query accurately and helpfully. 
 If images are provided, analyze them carefully and incorporate visual information into your response.
-Be comprehensive, accurate, and helpful in your response.
+If only text is provided, focus on understanding and responding to the text query comprehensively.
+Be detailed, accurate, and conversational in your response.
 ''';
 
     return prompt;

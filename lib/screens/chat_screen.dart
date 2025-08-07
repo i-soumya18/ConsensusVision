@@ -14,24 +14,17 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
+class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _fabAnimationController;
 
   @override
   void initState() {
     super.initState();
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimationController.forward();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _fabAnimationController.dispose();
     super.dispose();
   }
 
@@ -70,11 +63,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
         },
       ),
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(bottom: 100), // Push FAB up from bottom
-        child: _buildFloatingActionButton(),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -105,30 +93,31 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       ),
       actions: [
+        // New Chat Button
+        IconButton(
+          icon: const Icon(Icons.add_comment),
+          onPressed: () => _createNewChat(),
+          tooltip: 'New Chat',
+          iconSize: 24.0,
+        ),
+        // Chat History Button
         IconButton(
           icon: const Icon(Icons.history),
           onPressed: () => _showChatSessions(),
           tooltip: 'Chat History',
+          iconSize: 24.0,
         ),
+        // More Options Menu
         PopupMenuButton<String>(
           onSelected: _handleMenuAction,
+          iconSize: 24.0,
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'new_chat',
-              child: Row(
-                children: [
-                  Icon(Icons.add_comment),
-                  SizedBox(width: 8),
-                  Text('New Chat'),
-                ],
-              ),
-            ),
             const PopupMenuItem(
               value: 'search',
               child: Row(
                 children: [
                   Icon(Icons.search),
-                  SizedBox(width: 8),
+                  SizedBox(width: 12),
                   Text('Search Messages'),
                 ],
               ),
@@ -138,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   Icon(Icons.settings),
-                  SizedBox(width: 8),
+                  SizedBox(width: 12),
                   Text('Settings'),
                 ],
               ),
@@ -264,20 +253,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return ScaleTransition(
-      scale: _fabAnimationController,
-      child: FloatingActionButton(
-        onPressed: () => _createNewChat(),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        child: const Icon(Icons.add_comment),
-        tooltip: 'New Chat',
-      ),
-    );
-  }
-
   void _showChatSessions() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     Navigator.of(context).push(
@@ -292,9 +267,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'new_chat':
-        _createNewChat();
-        break;
       case 'search':
         _showSearch();
         break;

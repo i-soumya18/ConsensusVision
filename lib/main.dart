@@ -12,6 +12,18 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Suppress keyboard event assertions in debug mode
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // Filter out known harmless keyboard event assertions
+    if (details.exception.toString().contains('KeyDownEvent is dispatched') ||
+        details.exception.toString().contains('_pressedKeys.containsKey')) {
+      // Silently ignore this known Flutter framework issue
+      return;
+    }
+    // For other errors, use default handler
+    FlutterError.presentError(details);
+  };
+
   // Initialize SQLite for desktop platforms
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();

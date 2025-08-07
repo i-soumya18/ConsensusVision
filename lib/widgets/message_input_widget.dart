@@ -436,13 +436,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
 
   void _showPromptLibrary() async {
     final selectedPrompt = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) =>
-            PromptLibraryScreen(onPromptSelected: (prompt) => prompt),
-      ),
+      MaterialPageRoute(builder: (context) => const PromptLibraryScreen()),
     );
 
-    if (selectedPrompt != null) {
+    if (selectedPrompt != null && selectedPrompt.isNotEmpty) {
       setState(() {
         _selectedPromptTemplate = selectedPrompt;
       });
@@ -451,7 +448,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Prompt template selected'),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'Clear',
             onPressed: () {

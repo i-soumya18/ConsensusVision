@@ -296,8 +296,8 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen> {
       child: InkWell(
         onTap: () {
           if (widget.onPromptSelected != null) {
-            Navigator.of(context).pop();
-            widget.onPromptSelected!(prompt.content);
+            // Return the prompt content via Navigator.pop
+            Navigator.of(context).pop(prompt.content);
           }
         },
         borderRadius: BorderRadius.circular(12),
