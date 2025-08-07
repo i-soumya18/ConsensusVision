@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 import '../models/message.dart';
 import '../models/chat_session.dart';
@@ -13,8 +14,20 @@ class DatabaseService {
   static const String _messagesTable = 'messages';
   static const String _chatSessionsTable = 'chat_sessions';
 
+  // Initialize database factory for desktop platforms
+  static void initializeDatabase() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+  }
+
   static Future<Database> get database async {
     if (_database != null) return _database!;
+
+    // Ensure database factory is initialized
+    initializeDatabase();
+
     _database = await _initDatabase();
     return _database!;
   }

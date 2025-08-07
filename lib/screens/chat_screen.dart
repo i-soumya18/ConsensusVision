@@ -66,7 +66,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
         },
       ),
-      floatingActionButton: _buildFloatingActionButton(),
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 100), // Push FAB up from bottom
+        child: _buildFloatingActionButton(),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -261,6 +265,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       scale: _fabAnimationController,
       child: FloatingActionButton(
         onPressed: () => _createNewChat(),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 6,
         child: const Icon(Icons.add_comment),
         tooltip: 'New Chat',
       ),

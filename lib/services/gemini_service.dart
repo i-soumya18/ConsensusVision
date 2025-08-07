@@ -7,18 +7,18 @@ import 'ai_service.dart';
 class GeminiService implements AIService {
   final String apiKey;
   static const String baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta';
+      'https://generativelanguage.googleapis.com/v1beta/openai/';
 
   GeminiService({required this.apiKey});
 
   @override
-  String get modelName => 'Gemini Pro Vision';
+  String get modelName => 'Gemini 2.0 Flash';
 
   @override
   Future<bool> isAvailable() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/models'),
+        Uri.parse('${baseUrl}models'),
         headers: {'Authorization': 'Bearer $apiKey'},
       );
       return response.statusCode == 200;
@@ -34,79 +34,62 @@ class GeminiService implements AIService {
     String? extractedText,
   }) async {
     try {
-      final List<Map<String, dynamic>> parts = [];
+      // Build content array for OpenAI-compatible format
+      final List<Map<String, dynamic>> content = [];
 
-      // Add text query
-      parts.add({'text': _buildPrompt(query, extractedText)});
+      // Add text content
+      content.add({'type': 'text', 'text': _buildPrompt(query, extractedText)});
 
       // Add images if provided
       if (images != null && images.isNotEmpty) {
         for (final image in images) {
           final bytes = await image.readAsBytes();
           final base64Image = base64Encode(bytes);
-          parts.add({
-            'inline_data': {'mime_type': 'image/jpeg', 'data': base64Image},
+          content.add({
+            'type': 'image_url',
+            'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
           });
         }
       }
 
       final requestBody = {
-        'contents': [
-          {'parts': parts},
+        'model': 'gemini-2.0-flash',
+        'messages': [
+          {'role': 'user', 'content': content},
         ],
-        'generationConfig': {
-          'temperature': 0.7,
-          'topK': 40,
-          'topP': 0.95,
-          'maxOutputTokens': 1024,
-        },
-        'safetySettings': [
-          {
-            'category': 'HARM_CATEGORY_HARASSMENT',
-            'threshold': 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            'category': 'HARM_CATEGORY_HATE_SPEECH',
-            'threshold': 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            'threshold': 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            'threshold': 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-        ],
+        'max_tokens': 2048,
+        'temperature': 0.7,
       };
 
       final response = await http.post(
-        Uri.parse(
-          '$baseUrl/models/gemini-pro-vision:generateContent?key=$apiKey',
-        ),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('${baseUrl}chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
         body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final candidates = jsonResponse['candidates'] as List?;
+        final choices = jsonResponse['choices'] as List?;
 
-        if (candidates != null && candidates.isNotEmpty) {
-          final content =
-              candidates[0]['content']['parts'][0]['text'] as String;
-          final safetyRatings = candidates[0]['safetyRatings'] as List?;
+        if (choices != null && choices.isNotEmpty) {
+          final choice = choices[0];
+          final message = choice['message'];
+          final content = message['content'] as String;
+          final finishReason = choice['finish_reason'] as String?;
 
-          // Calculate confidence based on safety ratings and finish reason
-          double confidence = _calculateConfidence(candidates[0]);
+          // Calculate confidence based on finish reason and response quality
+          double confidence = _calculateConfidence(finishReason, content);
 
           return AIResponse.success(
             content: content,
             model: modelName,
             confidence: confidence,
             metadata: {
-              'safetyRatings': safetyRatings,
-              'finishReason': candidates[0]['finishReason'],
+              'finishReason': finishReason,
+              'usage': jsonResponse['usage'],
             },
           );
         } else {
@@ -117,8 +100,10 @@ class GeminiService implements AIService {
         }
       } else {
         final errorBody = jsonDecode(response.body);
+        final errorMessage =
+            errorBody['error']?['message'] ?? 'Unknown error occurred';
         return AIResponse.error(
-          error: errorBody['error']['message'] ?? 'Unknown error occurred',
+          error: 'API Error (${response.statusCode}): $errorMessage',
           model: modelName,
         );
       }
@@ -146,36 +131,36 @@ Be comprehensive, accurate, and helpful in your response.
     return prompt;
   }
 
-  double _calculateConfidence(Map<String, dynamic> candidate) {
-    final finishReason = candidate['finishReason'] as String?;
-    final safetyRatings = candidate['safetyRatings'] as List?;
-
+  double _calculateConfidence(String? finishReason, String content) {
     double confidence = 0.8; // Base confidence
 
     // Adjust based on finish reason
     switch (finishReason) {
-      case 'STOP':
+      case 'stop':
         confidence = 0.9;
         break;
-      case 'MAX_TOKENS':
+      case 'length':
         confidence = 0.7;
         break;
-      case 'SAFETY':
+      case 'content_filter':
         confidence = 0.3;
         break;
-      case 'RECITATION':
-        confidence = 0.5;
-        break;
+      default:
+        confidence = 0.8;
     }
 
-    // Adjust based on safety ratings
-    if (safetyRatings != null) {
-      for (final rating in safetyRatings) {
-        final probability = rating['probability'] as String?;
-        if (probability == 'HIGH' || probability == 'MEDIUM') {
-          confidence *= 0.8;
-        }
-      }
+    // Adjust based on content quality (simple heuristics)
+    if (content.length < 10) {
+      confidence *= 0.6; // Very short responses are less confident
+    } else if (content.length > 100) {
+      confidence *= 1.1; // Longer, detailed responses are more confident
+    }
+
+    // Check for common error indicators
+    if (content.toLowerCase().contains('sorry') ||
+        content.toLowerCase().contains('cannot') ||
+        content.toLowerCase().contains('unable')) {
+      confidence *= 0.7;
     }
 
     return confidence.clamp(0.0, 1.0);

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:io';
 import 'services/config_service.dart';
+import 'services/database_service.dart';
 import 'providers/chat_provider.dart';
 import 'screens/setup_screen.dart';
 import 'screens/chat_screen.dart';
@@ -8,6 +11,15 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SQLite for desktop platforms
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+  // Initialize database service
+  DatabaseService.initializeDatabase();
 
   // Initialize configuration service
   await ConfigService.init();
