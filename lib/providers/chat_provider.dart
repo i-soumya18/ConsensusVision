@@ -257,14 +257,20 @@ class ChatProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _buildConversationHistory() {
     final history = <Map<String, dynamic>>[];
 
-    // Get the last 10 messages (5 exchanges) for context, excluding the current exchange
-    final messagesToInclude = _currentMessages.length > 2
-        ? _currentMessages.sublist(0, _currentMessages.length - 2)
-        : <Message>[];
+    // Get all completed messages, excluding the current AI message being generated
+    // Include all previous exchanges and the current user message
+    final messagesToInclude = _currentMessages
+        .where(
+          (message) =>
+              (message.status == MessageStatus.sent ||
+                  message.status == MessageStatus.delivered) &&
+              message.status != MessageStatus.sending,
+        )
+        .toList();
 
-    // Take only the last 10 messages to keep context manageable
-    final recentMessages = messagesToInclude.length > 10
-        ? messagesToInclude.sublist(messagesToInclude.length - 10)
+    // Take only the last 20 messages to keep context manageable but comprehensive
+    final recentMessages = messagesToInclude.length > 20
+        ? messagesToInclude.sublist(messagesToInclude.length - 20)
         : messagesToInclude;
 
     for (final message in recentMessages) {
