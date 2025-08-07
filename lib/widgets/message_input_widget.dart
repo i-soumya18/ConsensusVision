@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../theme/app_theme.dart';
@@ -29,7 +30,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   List<File> _selectedImages = [];
   String? _selectedPromptTemplate;
   late AnimationController _animationController;
+  late AnimationController _promptAnimationController;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _promptSlideAnimation;
+  late Animation<double> _promptFadeAnimation;
 
   @override
   void initState() {
@@ -41,6 +45,23 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
+
+    _promptAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _promptSlideAnimation = Tween<double>(begin: -100.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _promptAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+    _promptFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _promptAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -48,6 +69,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     _textController.dispose();
     _focusNode.dispose();
     _animationController.dispose();
+    _promptAnimationController.dispose();
     super.dispose();
   }
 
@@ -68,6 +90,23 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Selected prompt template indicator
+          if (_selectedPromptTemplate != null) ...[
+            AnimatedBuilder(
+              animation: _promptAnimationController,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _promptSlideAnimation.value),
+                  child: FadeTransition(
+                    opacity: _promptFadeAnimation,
+                    child: _buildPromptIndicator(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Selected images preview
           if (_selectedImages.isNotEmpty) ...[
             _buildSelectedImagesPreview(),
@@ -87,15 +126,40 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
 
               // Text input
               Expanded(
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   constraints: const BoxConstraints(maxHeight: 120),
+                  decoration: _selectedPromptTemplate != null
+                      ? BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: AppTheme.primaryColor,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        )
+                      : null,
                   child: TextField(
                     controller: _textController,
                     focusNode: _focusNode,
                     maxLines: null,
                     textInputAction: TextInputAction.newline,
                     decoration: InputDecoration(
-                      hintText: 'Ask me anything...',
+                      hintText: _selectedPromptTemplate != null
+                          ? 'Enhanced AI prompt active - type your question...'
+                          : 'Ask me anything...',
+                      hintStyle: _selectedPromptTemplate != null
+                          ? TextStyle(
+                              color: AppTheme.primaryColor.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            )
+                          : null,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -105,7 +169,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: AppTheme.backgroundColor,
+                      fillColor: _selectedPromptTemplate != null
+                          ? AppTheme.primaryColor.withOpacity(0.05)
+                          : AppTheme.backgroundColor,
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
@@ -117,6 +183,114 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               // Send button
               _buildSendButton(),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPromptIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor.withOpacity(0.1),
+            AppTheme.primaryColor.withOpacity(0.05),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '🚀 Enhanced AI Prompt Active',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _selectedPromptTemplate!.length > 50
+                      ? '${_selectedPromptTemplate!.substring(0, 50)}...'
+                      : _selectedPromptTemplate!,
+                  style: TextStyle(
+                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedPromptTemplate = null;
+              });
+              _promptAnimationController.reverse();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('✨ Prompt template cleared'),
+                  backgroundColor: AppTheme.primaryColor,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(Icons.close, color: Colors.red, size: 16),
+            ),
           ),
         ],
       ),
@@ -391,11 +565,41 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     final text = _textController.text.trim();
     if (text.isEmpty && _selectedImages.isEmpty) return;
 
+    // Show sending feedback if prompt is active
+    if (_selectedPromptTemplate != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('✨ Sending enhanced AI request...'),
+            ],
+          ),
+          backgroundColor: AppTheme.primaryColor,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
     widget.onSendMessage(
       text.isEmpty ? 'Please analyze these images.' : text,
       _selectedImages.isEmpty ? null : List.from(_selectedImages),
       promptTemplate: _selectedPromptTemplate,
     );
+
+    // Clear with animation
+    if (_selectedPromptTemplate != null) {
+      _promptAnimationController.reverse();
+    }
 
     _textController.clear();
     setState(() {
@@ -405,32 +609,81 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   }
 
   Widget _buildPromptLibraryButton() {
-    return GestureDetector(
-      onTap: _showPromptLibrary,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: _selectedPromptTemplate != null
-              ? AppTheme.primaryColor
-              : AppTheme.primaryColor.withOpacity(0.7),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _selectedPromptTemplate != null ? _scaleAnimation.value : 1.0,
+          child: GestureDetector(
+            onTap: _showPromptLibrary,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: _selectedPromptTemplate != null
+                    ? LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor,
+                          AppTheme.primaryColor.withBlue(255),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: _selectedPromptTemplate == null
+                    ? AppTheme.primaryColor.withOpacity(0.7)
+                    : null,
+                shape: BoxShape.circle,
+                border: _selectedPromptTemplate != null
+                    ? Border.all(color: Colors.white.withOpacity(0.3), width: 2)
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: _selectedPromptTemplate != null
+                        ? AppTheme.primaryColor.withOpacity(0.5)
+                        : AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: _selectedPromptTemplate != null ? 12 : 8,
+                    offset: const Offset(0, 2),
+                    spreadRadius: _selectedPromptTemplate != null ? 2 : 0,
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    _selectedPromptTemplate != null
+                        ? Icons.auto_awesome
+                        : Icons.library_books_outlined,
+                    color: Colors.white,
+                    size: _selectedPromptTemplate != null ? 22 : 20,
+                  ),
+                  if (_selectedPromptTemplate != null)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 8,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: Icon(
-          _selectedPromptTemplate != null
-              ? Icons.library_books
-              : Icons.library_books_outlined,
-          color: Colors.white,
-          size: 20,
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -444,21 +697,75 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
         _selectedPromptTemplate = selectedPrompt;
       });
 
-      // Show feedback that prompt is selected
+      // Trigger animations
+      _animationController.forward().then((_) {
+        _animationController.reverse();
+      });
+      _promptAnimationController.forward();
+
+      // Show enhanced feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Prompt template selected'),
-          duration: const Duration(seconds: 3),
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '🚀 Enhanced AI Prompt Activated!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      'Your messages will now use advanced prompting for better AI responses',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.primaryColor,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           action: SnackBarAction(
             label: 'Clear',
+            textColor: Colors.white,
             onPressed: () {
               setState(() {
                 _selectedPromptTemplate = null;
               });
+              _promptAnimationController.reverse();
             },
           ),
         ),
       );
+
+      // Add haptic feedback
+      HapticFeedback.mediumImpact();
     }
   }
 }

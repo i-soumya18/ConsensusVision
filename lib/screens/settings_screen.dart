@@ -48,12 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppTheme.surfaceColor,
-        elevation: 0,
-      ),
-      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(title: const Text('Settings'), elevation: 0),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -136,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           'API keys are stored securely on your device and used only for AI model requests.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppTheme.onSurfaceColor.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -241,7 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           'Auto-select uses AI evaluation to choose the best model for each query.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppTheme.onSurfaceColor.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -254,15 +249,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: 'Appearance',
         icon: Icons.palette,
         children: [
-          SwitchListTile(
-            title: const Text('Dark Mode'),
-            subtitle: const Text('Use dark theme for better night viewing'),
-            value: themeService.isDarkMode,
-            onChanged: (value) async {
-              await themeService.setThemeMode(value);
-              _showSnackBar(value ? 'Dark mode enabled' : 'Light mode enabled');
-            },
-            activeColor: AppTheme.primaryColor,
+          ListTile(
+            leading: Icon(Icons.brightness_6, color: AppTheme.primaryColor),
+            title: const Text('Theme Mode'),
+            subtitle: Text(_getThemeModeDescription(themeService.themeMode)),
+            trailing: DropdownButton<AppThemeMode>(
+              value: themeService.themeMode,
+              onChanged: (AppThemeMode? newMode) {
+                if (newMode != null) {
+                  themeService.setThemeMode(newMode);
+                  _showSnackBar(_getThemeModeMessage(newMode));
+                }
+              },
+              items: const [
+                DropdownMenuItem(
+                  value: AppThemeMode.light,
+                  child: Text('Light'),
+                ),
+                DropdownMenuItem(value: AppThemeMode.dark, child: Text('Dark')),
+                DropdownMenuItem(
+                  value: AppThemeMode.system,
+                  child: Text('System'),
+                ),
+              ],
+            ),
           ),
           const Divider(),
           ListTile(
@@ -283,6 +293,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  String _getThemeModeDescription(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.light:
+        return 'Always use light theme';
+      case AppThemeMode.dark:
+        return 'Always use dark theme';
+      case AppThemeMode.system:
+        return 'Follow system theme settings';
+    }
+  }
+
+  String _getThemeModeMessage(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.light:
+        return '☀️ Light theme enabled';
+      case AppThemeMode.dark:
+        return '🌙 Dark theme enabled';
+      case AppThemeMode.system:
+        return '🔄 System theme enabled - follows your device settings';
+    }
   }
 
   Widget _buildDataManagementSection() {
@@ -426,7 +458,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.onSurfaceColor.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],
@@ -470,21 +502,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             runSpacing: 12,
             children:
                 [
-                      Colors.blue,
-                      Colors.red,
-                      Colors.green,
-                      Colors.purple,
-                      Colors.orange,
-                      Colors.teal,
-                      Colors.indigo,
-                      Colors.pink,
+                      const Color(0xFF2563EB), // Blue
+                      const Color(0xFFDC2626), // Red
+                      const Color(0xFF059669), // Green
+                      const Color(0xFF7C3AED), // Purple
+                      const Color(0xFFEA580C), // Orange
+                      const Color(0xFF0891B2), // Teal
+                      const Color(0xFF4338CA), // Indigo
+                      const Color(0xFFDB2777), // Pink
                     ]
                     .map(
                       (color) => GestureDetector(
                         onTap: () {
                           themeService.setPrimaryColor(color);
                           Navigator.pop(context);
-                          _showSnackBar('Color theme updated');
+                          _showSnackBar('🎨 Color theme updated');
                         },
                         child: Container(
                           width: 50,
@@ -494,11 +526,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: themeService.primaryColor == color
-                                  ? Colors.black
+                                  ? Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white
+                                        : Colors.black
                                   : Colors.transparent,
                               width: 3,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
+                          child: themeService.primaryColor == color
+                              ? Icon(Icons.check, color: Colors.white, size: 24)
+                              : null,
                         ),
                       ),
                     )

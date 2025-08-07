@@ -51,7 +51,11 @@ class MyApp extends StatelessWidget {
           title: 'ImageQuery AI',
           theme: themeService.lightTheme,
           darkTheme: themeService.darkTheme,
-          themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: themeService.themeMode == AppThemeMode.system
+              ? ThemeMode.system
+              : themeService.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light,
           home: const AppWrapper(),
           routes: {
             '/setup': (context) => const SetupScreen(),
