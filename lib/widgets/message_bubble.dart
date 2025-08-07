@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/message.dart';
+import '../theme/app_theme.dart';
+import 'image_preview_widget.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
+
+class MessageBubble extends StatelessWidget {
+  final Message message;
+  final VoidCallback? onRetry;
+
+  const MessageBubble({super.key, required this.message, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.type == MessageType.user;
+    final isError = message.status == MessageStatus.error;
+    final isSending = message.status == MessageStatus.sending;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppTheme.primaryColor,
+              child: Icon(Icons.smart_toy, size: 18, color: Colors.white),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isUser
+                    ? AppTheme.userMessageColor
+                    : isError
+                    ? AppTheme.errorColor.withOpacity(0.1)
+                    : AppTheme.aiMessageColor,
+                borderRadius: BorderRadius.circular(18).copyWith(
+                  bottomLeft: isUser ? null : const Radius.circular(4),
+                  bottomRight: isUser ? const Radius.circular(4) : null,
+                ),
+                border: isError
+                    ? Border.all(color: AppTheme.errorColor, width: 1)
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Images if present
+                  if (message.imagePaths.isNotEmpty) ...[
+                    ImagePreviewWidget(imagePaths: message.imagePaths),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Message content
+                  if (isSending)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: AnimatedTextKit(
+                            animatedTexts: [
+                              TypewriterAnimatedText(
+                                'Thinking...',
+                                textStyle: TextStyle(
+                                  color: isUser
+                                      ? Colors.white
+                                      : AppTheme.onSurfaceColor,
+                                  fontSize: 16,
+                                ),
+                                speed: const Duration(milliseconds: 100),
+                              ),
+                            ],
+                            repeatForever: true,
+                            pause: const Duration(milliseconds: 500),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    SelectableText(
+                      message.content,
+                      style: TextStyle(
+                        color: isUser ? Colors.white : AppTheme.onSurfaceColor,
+                        fontSize: 16,
+                      ),
+                    ),
+
+                  const SizedBox(height: 4),
+
+                  // Message metadata
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        DateFormat('HH:mm').format(message.timestamp),
+                        style: TextStyle(
+                          color:
+                              (isUser ? Colors.white : AppTheme.onSurfaceColor)
+                                  .withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (!isUser && message.aiModel != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            message.aiModel!.split(' ').first,
+                            style: TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (message.confidence != null &&
+                          message.confidence! > 0) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.verified,
+                          size: 12,
+                          color: _getConfidenceColor(message.confidence!),
+                        ),
+                      ],
+                      if (isError) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: onRetry,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.errorColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Retry',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isUser) ...[
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppTheme.userMessageColor,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 0.8) return AppTheme.successColor;
+    if (confidence >= 0.6) return Colors.orange;
+    return AppTheme.errorColor;
+  }
+}
