@@ -279,9 +279,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _showChatSessions() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const ChatSessionsScreen()));
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider.value(
+          value: chatProvider,
+          child: const ChatSessionsScreen(),
+        ),
+      ),
+    );
   }
 
   void _handleMenuAction(String action) {
