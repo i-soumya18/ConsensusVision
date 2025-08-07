@@ -5,6 +5,7 @@ import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../theme/app_theme.dart';
 import 'chat_sessions_screen.dart';
+import 'settings_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -286,10 +287,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showSettings() {
-    // Implement settings screen
-    ScaffoldMessenger.of(
+    Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Settings coming soon!')));
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+    );
   }
 
   void _scrollToBottom() {

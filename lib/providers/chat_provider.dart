@@ -93,6 +93,24 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> clearAllChatSessions() async {
+    try {
+      // Delete all chat sessions
+      for (final session in _chatSessions) {
+        await DatabaseService.deleteChatSession(session.id);
+      }
+
+      // Clear local state
+      _chatSessions.clear();
+      _currentSession = null;
+      _currentMessages.clear();
+
+      notifyListeners();
+    } catch (e) {
+      _setError('Failed to clear all chat sessions: $e');
+    }
+  }
+
   Future<void> renameChatSession(String sessionId, String newTitle) async {
     try {
       final session = await DatabaseService.getChatSession(sessionId);

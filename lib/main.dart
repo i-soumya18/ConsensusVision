@@ -4,10 +4,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:io';
 import 'services/config_service.dart';
 import 'services/database_service.dart';
+import 'services/theme_service.dart';
 import 'providers/chat_provider.dart';
 import 'screens/setup_screen.dart';
 import 'screens/chat_screen.dart';
-import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,17 +44,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ImageQuery AI',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ConfigService.isDarkMode() ? ThemeMode.dark : ThemeMode.light,
-      home: const AppWrapper(),
-      routes: {
-        '/setup': (context) => const SetupScreen(),
-        '/chat': (context) => const ChatWrapper(),
-      },
-      debugShowCheckedModeBanner: false,
+    return ChangeNotifierProvider(
+      create: (context) => ThemeService()..initialize(),
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) => MaterialApp(
+          title: 'ImageQuery AI',
+          theme: themeService.lightTheme,
+          darkTheme: themeService.darkTheme,
+          themeMode: themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: const AppWrapper(),
+          routes: {
+            '/setup': (context) => const SetupScreen(),
+            '/chat': (context) => const ChatWrapper(),
+          },
+          debugShowCheckedModeBanner: false,
+        ),
+      ),
     );
   }
 }
