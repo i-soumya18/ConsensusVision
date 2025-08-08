@@ -62,6 +62,13 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
         curve: Curves.easeInOut,
       ),
     );
+
+    // Add listener to text controller to update send button state
+    _textController.addListener(() {
+      setState(() {
+        // This will trigger a rebuild to update the send button state
+      });
+    });
   }
 
   @override
@@ -153,7 +160,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     decoration: InputDecoration(
                       hintText: _selectedPromptTemplate != null
                           ? 'Enhanced AI prompt active - type your question...'
-                          : 'Ask me anything...',
+                          : 'Let\'s take off! 🚀',
                       hintStyle: _selectedPromptTemplate != null
                           ? TextStyle(
                               color: AppTheme.primaryColor.withOpacity(0.7),
@@ -590,8 +597,21 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       );
     }
 
+    // Determine the message to send based on what the user provided
+    String messageToSend;
+    if (text.isNotEmpty) {
+      // Use the actual user text when they typed something
+      messageToSend = text;
+    } else if (_selectedImages.isNotEmpty) {
+      // Only use default message when there are images but no text
+      messageToSend = 'Please analyze these images.';
+    } else {
+      // This should never happen due to the check above, but just in case
+      return;
+    }
+
     widget.onSendMessage(
-      text.isEmpty ? 'Please analyze these images.' : text,
+      messageToSend,
       _selectedImages.isEmpty ? null : List.from(_selectedImages),
       promptTemplate: _selectedPromptTemplate,
     );
