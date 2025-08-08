@@ -166,11 +166,8 @@ class GeminiService implements AIService {
     String prompt = '';
 
     // Add system-like instructions at the beginning
-    prompt +=
-        '''You are an advanced AI assistant specialized in image analysis and contextual conversations. 
-Always maintain awareness of conversation context and provide detailed, helpful responses.
-
-''';
+    prompt += ConfigService.getSystemPrompt();
+    prompt += '\n\n';
 
     // Add contextual awareness
     if (conversationHistory != null && conversationHistory.isNotEmpty) {

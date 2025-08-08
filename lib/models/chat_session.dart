@@ -10,6 +10,7 @@ class ChatSession {
   final DateTime lastUpdated;
   final List<String> messageIds;
   final int messageCount;
+  final String? defaultPrompt;
 
   const ChatSession({
     required this.id,
@@ -18,6 +19,7 @@ class ChatSession {
     required this.lastUpdated,
     required this.messageIds,
     required this.messageCount,
+    this.defaultPrompt,
   });
 
   factory ChatSession.fromJson(Map<String, dynamic> json) =>
@@ -31,6 +33,7 @@ class ChatSession {
     DateTime? lastUpdated,
     List<String>? messageIds,
     int? messageCount,
+    String? defaultPrompt,
   }) {
     return ChatSession(
       id: id ?? this.id,
@@ -39,6 +42,7 @@ class ChatSession {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       messageIds: messageIds ?? this.messageIds,
       messageCount: messageCount ?? this.messageCount,
+      defaultPrompt: defaultPrompt ?? this.defaultPrompt,
     );
   }
 }

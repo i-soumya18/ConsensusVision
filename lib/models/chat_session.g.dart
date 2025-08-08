@@ -15,6 +15,7 @@ ChatSession _$ChatSessionFromJson(Map<String, dynamic> json) => ChatSession(
       .map((e) => e as String)
       .toList(),
   messageCount: (json['messageCount'] as num).toInt(),
+  defaultPrompt: json['defaultPrompt'] as String?,
 );
 
 Map<String, dynamic> _$ChatSessionToJson(ChatSession instance) =>
@@ -25,4 +26,5 @@ Map<String, dynamic> _$ChatSessionToJson(ChatSession instance) =>
       'lastUpdated': instance.lastUpdated.toIso8601String(),
       'messageIds': instance.messageIds,
       'messageCount': instance.messageCount,
+      'defaultPrompt': instance.defaultPrompt,
     };

@@ -132,6 +132,26 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setDefaultPromptForSession(String? promptTemplate) async {
+    if (_currentSession == null) return;
+
+    try {
+      final updatedSession = _currentSession!.copyWith(
+        defaultPrompt: promptTemplate,
+        lastUpdated: DateTime.now(),
+      );
+      await DatabaseService.updateChatSession(updatedSession);
+      await _loadChatSessions();
+
+      _currentSession = updatedSession;
+      notifyListeners();
+    } catch (e) {
+      _setError('Failed to update default prompt: $e');
+    }
+  }
+
+  String? get currentSessionDefaultPrompt => _currentSession?.defaultPrompt;
+
   // Message handling
   Future<void> sendMessage({
     required String content,
@@ -148,11 +168,16 @@ class ChatProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      // Process prompt template if provided and enhance with context
+      // Use session's default prompt if no specific prompt template is provided
+      String? effectivePromptTemplate =
+          promptTemplate ?? _currentSession?.defaultPrompt;
+
+      // Process prompt template if available and enhance with context
       String finalContent = content;
-      if (promptTemplate != null && promptTemplate.isNotEmpty) {
+      if (effectivePromptTemplate != null &&
+          effectivePromptTemplate.isNotEmpty) {
         finalContent = PromptLibraryService.processPromptTemplate(
-          promptTemplate,
+          effectivePromptTemplate,
           content,
         );
       }

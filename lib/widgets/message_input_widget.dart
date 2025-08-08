@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import '../screens/prompt_library_screen.dart';
+import '../providers/chat_provider.dart';
 
 class MessageInputWidget extends StatefulWidget {
   final Function(String message, List<File>? images, {String? promptTemplate})
@@ -99,7 +100,28 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Selected prompt template indicator
+          // Session default prompt indicator (shown when no specific prompt is selected)
+          Consumer<ChatProvider>(
+            builder: (context, chatProvider, child) {
+              final hasDefaultPrompt =
+                  chatProvider.currentSessionDefaultPrompt != null;
+              final hasSelectedPrompt = _selectedPromptTemplate != null;
+
+              if (!hasSelectedPrompt && hasDefaultPrompt) {
+                return Column(
+                  children: [
+                    _buildDefaultPromptIndicator(
+                      chatProvider.currentSessionDefaultPrompt!,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
+          // Selected prompt template indicator (overrides default)
           if (_selectedPromptTemplate != null) ...[
             AnimatedBuilder(
               animation: _promptAnimationController,
@@ -160,18 +182,8 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     maxLines: null,
                     textInputAction: TextInputAction.newline,
                     decoration: InputDecoration(
-                      hintText: _selectedPromptTemplate != null
-                          ? '✨ Enhanced AI prompt active - type your question...'
-                          : '🚀 Let\'s take off!',
-                      hintStyle: _selectedPromptTemplate != null
-                          ? TextStyle(
-                              color: AppTheme.primaryColor.withOpacity(0.7),
-                              fontWeight: FontWeight.w500,
-                            )
-                          : TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryColor.withOpacity(0.8),
-                            ),
+                      hintText: _getHintText(),
+                      hintStyle: _getHintStyle(),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -181,9 +193,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: _selectedPromptTemplate != null
-                          ? AppTheme.primaryColor.withOpacity(0.05)
-                          : AppTheme.backgroundColor,
+                      fillColor: _getFillColor(),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
@@ -305,6 +315,104 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                 ),
               ),
               child: const Icon(Icons.close, color: Colors.red, size: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultPromptIndicator(String defaultPrompt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor.withOpacity(0.08),
+            AppTheme.primaryColor.withOpacity(0.03),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.8),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.star_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStyledText(
+                  '⭐ **Default Prompt** for this Chat',
+                  TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  defaultPrompt.length > 50
+                      ? '${defaultPrompt.substring(0, 50)}...'
+                      : defaultPrompt,
+                  style: TextStyle(
+                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () async {
+              final chatProvider = Provider.of<ChatProvider>(
+                context,
+                listen: false,
+              );
+              await chatProvider.setDefaultPromptForSession(null);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: _buildStyledText(
+                    '✨ **Default prompt** cleared for this chat',
+                    const TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppTheme.primaryColor,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(Icons.close, color: Colors.red, size: 12),
             ),
           ),
         ],
@@ -797,6 +905,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
         _selectedPromptTemplate = selectedPrompt;
       });
 
+      // Set this prompt as the default for the current chat session
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      await chatProvider.setDefaultPromptForSession(selectedPrompt);
+
       // Trigger animations
       _animationController.forward().then((_) {
         _animationController.reverse();
@@ -827,7 +939,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildStyledText(
-                      '🚀 **Enhanced AI Prompt** Activated!',
+                      '🚀 **Default Prompt Set** for this Chat!',
                       const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -836,7 +948,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     ),
                     const SizedBox(height: 4),
                     _buildStyledText(
-                      '_Your messages will now use **advanced prompting** for better AI responses_',
+                      '_All future messages in this chat will use this **enhanced prompt** by default_',
                       TextStyle(
                         fontSize: 12,
                         color: Colors.white.withOpacity(0.9),
@@ -869,5 +981,54 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       // Add haptic feedback
       HapticFeedback.mediumImpact();
     }
+  }
+
+  String _getHintText() {
+    if (_selectedPromptTemplate != null) {
+      return '✨ Enhanced AI prompt active - type your question...';
+    }
+
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (chatProvider.currentSessionDefaultPrompt != null) {
+      return '⭐ Default prompt active - type your message...';
+    }
+
+    return '🚀 Let\'s take off!';
+  }
+
+  TextStyle _getHintStyle() {
+    if (_selectedPromptTemplate != null) {
+      return TextStyle(
+        color: AppTheme.primaryColor.withOpacity(0.7),
+        fontWeight: FontWeight.w500,
+      );
+    }
+
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (chatProvider.currentSessionDefaultPrompt != null) {
+      return TextStyle(
+        color: AppTheme.primaryColor.withOpacity(0.6),
+        fontWeight: FontWeight.w500,
+        fontStyle: FontStyle.italic,
+      );
+    }
+
+    return TextStyle(
+      fontWeight: FontWeight.w600,
+      color: AppTheme.primaryColor.withOpacity(0.8),
+    );
+  }
+
+  Color _getFillColor() {
+    if (_selectedPromptTemplate != null) {
+      return AppTheme.primaryColor.withOpacity(0.05);
+    }
+
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (chatProvider.currentSessionDefaultPrompt != null) {
+      return AppTheme.primaryColor.withOpacity(0.03);
+    }
+
+    return AppTheme.backgroundColor;
   }
 }

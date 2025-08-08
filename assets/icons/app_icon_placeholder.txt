@@ -1,0 +1,13 @@
+// This is a placeholder for the app icon PNG file
+// You should replace this with an actual 512x512 PNG image
+// For now, we'll use the default Flutter icon and update it later
+
+// To create the icon:
+// 1. Use an image editing tool like GIMP, Photoshop, or online tools
+// 2. Create a 512x512 PNG with the following design:
+//    - Background: Gradient from #6C63FF to #4F46E5
+//    - Main icon: White brain/psychology icon (psychology_rounded from Material Icons)
+//    - Small camera icon overlay in bottom right
+//    - Rounded corners with some shadow
+
+// For now, we'll use the existing flutter_launcher_icons.yaml configuration

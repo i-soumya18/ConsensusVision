@@ -19,6 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _geminiApiController = TextEditingController();
   final TextEditingController _huggingFaceApiController =
       TextEditingController();
+  final TextEditingController _systemPromptController = TextEditingController();
   String _selectedModel = 'Gemini';
   bool _isLoading = false;
 
@@ -43,6 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _geminiApiController.text = geminiKey ?? '';
     _huggingFaceApiController.text = hfKey ?? '';
+    _systemPromptController.text = ConfigService.getSystemPrompt();
 
     // Load model parameters
     _temperature = ConfigService.getTemperature();
@@ -59,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _geminiApiController.dispose();
     _huggingFaceApiController.dispose();
+    _systemPromptController.dispose();
     super.dispose();
   }
 
@@ -76,6 +79,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildModelSelectionSection(),
                 const SizedBox(height: 24),
                 _buildModelParametersSection(),
+                const SizedBox(height: 24),
+                _buildSystemPromptSection(),
                 const SizedBox(height: 24),
                 _buildConversationSection(),
                 const SizedBox(height: 24),
@@ -575,6 +580,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildSystemPromptSection() {
+    return _buildSectionCard(
+      title: 'System Prompt',
+      icon: Icons.psychology,
+      children: [
+        ListTile(
+          leading: Icon(Icons.smart_toy, color: AppTheme.primaryColor),
+          title: const Text('AI Assistant Behavior'),
+          subtitle: const Text(
+            'Configure how the AI assistant responds to queries',
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'System Prompt',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _systemPromptController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter custom system prompt...',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.all(12),
+                ),
+                maxLines: 8,
+                style: const TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _saveSystemPrompt,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _resetSystemPrompt,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reset to Default'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveSystemPrompt() async {
+    try {
+      await ConfigService.setSystemPrompt(_systemPromptController.text);
+      _showSnackBar('System prompt saved successfully');
+    } catch (e) {
+      _showSnackBar('Failed to save system prompt: $e');
+    }
+  }
+
+  Future<void> _resetSystemPrompt() async {
+    try {
+      await ConfigService.resetSystemPromptToDefault();
+      _systemPromptController.text = ConfigService.getSystemPrompt();
+      _showSnackBar('System prompt reset to default');
+    } catch (e) {
+      _showSnackBar('Failed to reset system prompt: $e');
+    }
   }
 
   Widget _buildThemeSection() {
