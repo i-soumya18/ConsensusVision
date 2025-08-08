@@ -11,6 +11,7 @@ class ConfigService {
   static const String _topKKey = 'model_top_k';
   static const String _maxTokensKey = 'model_max_tokens';
   static const String _useAdvancedParametersKey = 'use_advanced_parameters';
+  static const String _selectedModelKey = 'selected_model';
 
   static SharedPreferences? _prefs;
 
@@ -99,6 +100,16 @@ class ConfigService {
   static bool getUseAdvancedParameters() {
     return _prefs!.getBool(_useAdvancedParametersKey) ??
         false; // Default to simple mode
+  }
+
+  // Selected AI Model
+  static Future<void> setSelectedModel(String modelName) async {
+    await _prefs!.setString(_selectedModelKey, modelName);
+  }
+
+  static String getSelectedModel() {
+    return _prefs!.getString(_selectedModelKey) ??
+        'Auto'; // Default to auto-select
   }
 
   // Reset model parameters to optimal defaults

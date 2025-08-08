@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/config_service.dart';
 import '../services/theme_service.dart';
 import '../services/export_service.dart';
+import '../services/model_registry_service.dart';
 import '../theme/app_theme.dart';
 import '../providers/chat_provider.dart';
 
@@ -49,6 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _topK = ConfigService.getTopK();
     _maxTokens = ConfigService.getMaxTokens();
     _useAdvancedParameters = ConfigService.getUseAdvancedParameters();
+    _selectedModel = ConfigService.getSelectedModel();
 
     setState(() => _isLoading = false);
   }
@@ -210,6 +212,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildModelSelectionSection() {
+    // Get available models based on current API key configuration
+    final hasGeminiKey = ConfigService.getGeminiApiKey()?.isNotEmpty ?? false;
+    final hasHuggingFaceKey =
+        ConfigService.getHuggingFaceApiKey()?.isNotEmpty ?? false;
+
+    final availableModels = ModelRegistryService.getAvailableModels(
+      hasGeminiKey: hasGeminiKey,
+      hasHuggingFaceKey: hasHuggingFaceKey,
+    );
+
     return _buildSectionCard(
       title: 'AI Model Preferences',
       icon: Icons.psychology,
@@ -222,7 +234,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedModel,
+          value: availableModels.any((model) => model.id == _selectedModel)
+              ? _selectedModel
+              : 'Auto', // Fallback to Auto if selected model is not available
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(
@@ -230,20 +244,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               vertical: 12,
             ),
           ),
-          items: const [
-            DropdownMenuItem(
-              value: 'Gemini',
-              child: Text('Google Gemini 2.5 Flash'),
-            ),
-            DropdownMenuItem(
-              value: 'HuggingFace',
-              child: Text('HuggingFace Models'),
-            ),
-            DropdownMenuItem(
-              value: 'Auto',
-              child: Text('Auto-select Best Model'),
-            ),
-          ],
+          isExpanded: true,
+          items: availableModels.map((model) {
+            final isAvailable = ModelRegistryService.isModelAvailable(
+              model.id,
+              hasGeminiKey: hasGeminiKey,
+              hasHuggingFaceKey: hasHuggingFaceKey,
+            );
+
+            return DropdownMenuItem(
+              value: model.id,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      model.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (isAvailable)
+                    Icon(Icons.check_circle, size: 16, color: Colors.green)
+                  else
+                    Icon(Icons.warning, size: 16, color: Colors.orange),
+                ],
+              ),
+            );
+          }).toList(),
           onChanged: (value) {
             setState(() {
               _selectedModel = value!;
@@ -252,6 +281,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         const SizedBox(height: 12),
+        if (availableModels.length < ModelRegistryService.getAllModels().length)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Add API keys above to unlock more AI models',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 8),
         Text(
           'Auto-select uses AI evaluation to choose the best model for each query.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -814,15 +873,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } else if (type == 'huggingface') {
         await ConfigService.setHuggingFaceApiKey(key.trim());
       }
+
+      // Refresh the UI to update available models
+      setState(() {
+        // Check if current selected model is still available
+        final hasGeminiKey =
+            ConfigService.getGeminiApiKey()?.isNotEmpty ?? false;
+        final hasHuggingFaceKey =
+            ConfigService.getHuggingFaceApiKey()?.isNotEmpty ?? false;
+
+        if (!ModelRegistryService.isModelAvailable(
+          _selectedModel,
+          hasGeminiKey: hasGeminiKey,
+          hasHuggingFaceKey: hasHuggingFaceKey,
+        )) {
+          _selectedModel = 'Auto'; // Fallback to auto-select
+          ConfigService.setSelectedModel('Auto');
+        }
+      });
+
       _showSnackBar('API key saved successfully');
     } catch (e) {
       _showSnackBar('Failed to save API key: $e');
     }
   }
 
-  void _saveModelPreference(String model) {
+  void _saveModelPreference(String model) async {
     // Save to preferences
-    _showSnackBar('Model preference updated');
+    await ConfigService.setSelectedModel(model);
+    _showSnackBar(
+      'Model preference updated to: ${ModelRegistryService.getModelById(model)?.displayName ?? model}',
+    );
   }
 
   void _showColorPicker(ThemeService themeService) {

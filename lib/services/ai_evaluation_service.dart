@@ -1,5 +1,7 @@
 import 'dart:io';
 import '../models/ai_response.dart';
+import '../services/config_service.dart';
+import '../services/model_registry_service.dart';
 import 'ai_service.dart';
 import 'gemini_service.dart';
 import 'huggingface_service.dart';
@@ -7,13 +9,109 @@ import 'text_extraction_service.dart';
 
 class AIEvaluationService {
   final List<AIService> _aiServices = [];
+  final String _geminiApiKey;
+  final String _huggingFaceApiKey;
 
   AIEvaluationService({
     required String geminiApiKey,
     required String huggingFaceApiKey,
-  }) {
+  }) : _geminiApiKey = geminiApiKey,
+       _huggingFaceApiKey = huggingFaceApiKey {
     _aiServices.add(GeminiService(apiKey: geminiApiKey));
     _aiServices.add(HuggingFaceService(apiKey: huggingFaceApiKey));
+  }
+
+  /// Process query using user's preferred model or auto-evaluation
+  Future<EvaluationResult> processQueryWithUserPreference({
+    required String query,
+    List<File>? images,
+    List<Map<String, dynamic>>? conversationHistory,
+  }) async {
+    final selectedModel = ConfigService.getSelectedModel();
+
+    if (selectedModel == 'Auto') {
+      // Use the existing evaluation method
+      return processQueryWithEvaluation(
+        query: query,
+        images: images,
+        conversationHistory: conversationHistory,
+      );
+    } else {
+      // Use specific selected model
+      return _processQueryWithSpecificModel(
+        modelId: selectedModel,
+        query: query,
+        images: images,
+        conversationHistory: conversationHistory,
+      );
+    }
+  }
+
+  /// Process query with a specific model
+  Future<EvaluationResult> _processQueryWithSpecificModel({
+    required String modelId,
+    required String query,
+    List<File>? images,
+    List<Map<String, dynamic>>? conversationHistory,
+  }) async {
+    // Extract text from images if provided
+    String? extractedText;
+    if (images != null && images.isNotEmpty) {
+      extractedText = await TextExtractionService.extractTextFromMultipleImages(
+        images,
+      );
+    }
+
+    // Create specific AI service for the selected model
+    final aiService = ModelRegistryService.createServiceForModel(
+      modelId,
+      geminiApiKey: _geminiApiKey,
+      huggingFaceApiKey: _huggingFaceApiKey,
+    );
+
+    if (aiService == null) {
+      // Fallback to auto-evaluation if model creation fails
+      return processQueryWithEvaluation(
+        query: query,
+        images: images,
+        conversationHistory: conversationHistory,
+      );
+    }
+
+    try {
+      // Process query with the specific model
+      final response = await aiService.processQuery(
+        query: query,
+        images: images,
+        extractedText: extractedText,
+        conversationHistory: conversationHistory,
+      );
+
+      if (response.isSuccessful) {
+        return EvaluationResult(
+          finalAnswer: response.content,
+          bestResponse: response,
+          allResponses: [response],
+          reasoning:
+              'Used selected model: ${ModelRegistryService.getModelById(modelId)?.displayName ?? modelId}',
+          confidence: response.confidence,
+        );
+      } else {
+        // If selected model fails, fallback to auto-evaluation
+        return processQueryWithEvaluation(
+          query: query,
+          images: images,
+          conversationHistory: conversationHistory,
+        );
+      }
+    } catch (e) {
+      // If specific model fails, fallback to auto-evaluation
+      return processQueryWithEvaluation(
+        query: query,
+        images: images,
+        conversationHistory: conversationHistory,
+      );
+    }
   }
 
   Future<EvaluationResult> processQueryWithEvaluation({

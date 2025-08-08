@@ -196,7 +196,7 @@ class ChatProvider extends ChangeNotifier {
 
       // Process query with AI evaluation and enhanced conversation context
       final evaluationResult = await _aiEvaluationService
-          .processQueryWithEvaluation(
+          .processQueryWithUserPreference(
             query: finalContent,
             images: images,
             conversationHistory: conversationHistory,
