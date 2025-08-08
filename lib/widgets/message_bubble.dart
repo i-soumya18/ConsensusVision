@@ -62,28 +62,41 @@ class MessageBubble extends StatelessWidget {
                     const SizedBox(height: 8),
                   ],
 
-                  // Message content
+                  // Message content with enhanced loading animation
                   if (isSending)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          width: 100,
+                          width: 150,
                           child: AnimatedTextKit(
                             animatedTexts: [
                               TypewriterAnimatedText(
-                                'Thinking...',
+                                message.content.isNotEmpty
+                                    ? message.content
+                                    : 'Thinking...',
                                 textStyle: TextStyle(
                                   color: isUser
                                       ? Colors.white
                                       : AppTheme.onSurfaceColor,
                                   fontSize: 16,
                                 ),
-                                speed: const Duration(milliseconds: 100),
+                                speed: const Duration(milliseconds: 80),
                               ),
                             ],
                             repeatForever: true,
-                            pause: const Duration(milliseconds: 500),
+                            pause: const Duration(milliseconds: 1000),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppTheme.primaryColor.withOpacity(0.7),
+                            ),
                           ),
                         ),
                       ],
@@ -99,7 +112,7 @@ class MessageBubble extends StatelessWidget {
 
                   const SizedBox(height: 4),
 
-                  // Message metadata
+                  // Message metadata with enhanced contextual indicators
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -112,6 +125,21 @@ class MessageBubble extends StatelessWidget {
                           fontSize: 12,
                         ),
                       ),
+
+                      // Show context indicator for AI responses that reference previous conversation
+                      if (!isUser &&
+                          _isContextualResponse(message.content)) ...[
+                        const SizedBox(width: 6),
+                        Tooltip(
+                          message: 'Response uses conversation context',
+                          child: Icon(
+                            Icons.chat_bubble_outline,
+                            size: 12,
+                            color: AppTheme.primaryColor.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+
                       if (!isUser && message.aiModel != null) ...[
                         const SizedBox(width: 8),
                         Container(
@@ -136,10 +164,14 @@ class MessageBubble extends StatelessWidget {
                       if (message.confidence != null &&
                           message.confidence! > 0) ...[
                         const SizedBox(width: 4),
-                        Icon(
-                          Icons.verified,
-                          size: 12,
-                          color: _getConfidenceColor(message.confidence!),
+                        Tooltip(
+                          message:
+                              'Confidence: ${(message.confidence! * 100).toStringAsFixed(0)}%',
+                          child: Icon(
+                            Icons.verified,
+                            size: 12,
+                            color: _getConfidenceColor(message.confidence!),
+                          ),
                         ),
                       ],
                       if (isError) ...[
@@ -189,5 +221,36 @@ class MessageBubble extends StatelessWidget {
     if (confidence >= 0.8) return AppTheme.successColor;
     if (confidence >= 0.6) return Colors.orange;
     return AppTheme.errorColor;
+  }
+
+  // Check if the AI response shows contextual awareness
+  bool _isContextualResponse(String content) {
+    final contextualIndicators = [
+      'as we discussed',
+      'from the previous',
+      'building on',
+      'continuing from',
+      'as mentioned',
+      'referring to',
+      'earlier',
+      'previously',
+      'that image',
+      'those images',
+      'the image you',
+      'your previous',
+      'our conversation',
+      'we talked about',
+      'you asked about',
+      'regarding',
+      'about that',
+      'from before',
+      'as you said',
+      'following up',
+    ];
+
+    final lowerContent = content.toLowerCase();
+    return contextualIndicators.any(
+      (indicator) => lowerContent.contains(indicator),
+    );
   }
 }

@@ -5,7 +5,7 @@ import '../services/config_service.dart';
 
 class TextExtractionService {
   static const String geminiBaseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/openai/';
+      'https://generativelanguage.googleapis.com/v1beta/models/';
 
   static Future<String> extractTextFromImage(File imageFile) async {
     try {
@@ -28,45 +28,46 @@ class TextExtractionService {
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      // Create request body using OpenAI-compatible format
+      // Create request body using Gemini's native format
       final requestBody = {
-        'model': 'gemini-2.0-flash',
-        'messages': [
+        'contents': [
           {
             'role': 'user',
-            'content': [
+            'parts': [
               {
-                'type': 'text',
                 'text':
                     'Extract all text from this image. Return only the extracted text without any additional commentary or formatting. If no text is found, return "No text found".',
               },
               {
-                'type': 'image_url',
-                'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+                'inline_data': {'mime_type': 'image/jpeg', 'data': base64Image},
               },
             ],
           },
         ],
-        'max_tokens': 2048,
-        'temperature': 0.1,
+        'generationConfig': {'temperature': 0.1, 'maxOutputTokens': 2048},
       };
 
       final response = await http.post(
-        Uri.parse('${geminiBaseUrl}chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
+        Uri.parse(
+          '${geminiBaseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey',
+        ),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final choices = jsonResponse['choices'] as List?;
+        final candidates = jsonResponse['candidates'] as List?;
 
-        if (choices != null && choices.isNotEmpty) {
-          final content = choices[0]['message']['content'] as String?;
-          return content?.trim() ?? '';
+        if (candidates != null && candidates.isNotEmpty) {
+          final candidate = candidates[0];
+          final content = candidate['content'];
+          final parts = content['parts'] as List?;
+
+          if (parts != null && parts.isNotEmpty) {
+            final text = parts[0]['text'] as String?;
+            return text?.trim() ?? '';
+          }
         }
       } else {
         print('Gemini API error: ${response.statusCode} - ${response.body}');

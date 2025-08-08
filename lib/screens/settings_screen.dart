@@ -58,6 +58,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildModelSelectionSection(),
                 const SizedBox(height: 24),
+                _buildConversationSection(),
+                const SizedBox(height: 24),
                 _buildThemeSection(),
                 const SizedBox(height: 24),
                 _buildDataManagementSection(),
@@ -317,6 +319,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Widget _buildConversationSection() {
+    return _buildSectionCard(
+      title: 'Conversation Settings',
+      icon: Icons.chat,
+      children: [
+        _buildInfoTile(
+          title: 'Continuous Context',
+          subtitle:
+              'AI maintains conversation context across multiple exchanges',
+          icon: Icons.chat_bubble_outline,
+          enabled: true,
+        ),
+        const Divider(),
+        _buildInfoTile(
+          title: 'Context Window',
+          subtitle: 'Last 20 messages are remembered for contextual responses',
+          icon: Icons.memory,
+        ),
+        const Divider(),
+        _buildInfoTile(
+          title: 'Smart Context',
+          subtitle: 'Important early messages preserved in long conversations',
+          icon: Icons.psychology,
+        ),
+        const Divider(),
+        _buildInfoTile(
+          title: 'Image Memory',
+          subtitle:
+              'Previously shared images referenced in ongoing discussions',
+          icon: Icons.image,
+        ),
+      ],
+    );
+  }
+
   Widget _buildDataManagementSection() {
     return _buildSectionCard(
       title: 'Data Management',
@@ -440,6 +477,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildInfoTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    bool enabled = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: enabled
+            ? AppTheme.primaryColor
+            : AppTheme.onSurfaceColor.withOpacity(0.6),
+      ),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: Text(subtitle),
+      trailing: enabled
+          ? Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20)
+          : Icon(
+              Icons.info_outline,
+              color: AppTheme.onSurfaceColor.withOpacity(0.5),
+              size: 20,
+            ),
     );
   }
 

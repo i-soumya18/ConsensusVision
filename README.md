@@ -9,10 +9,16 @@ A modern, creative chatbot interface for Android and Windows that processes imag
 - **🖼️ Multi-Image Processing**: Upload and analyze multiple images simultaneously
 - **🤖 Dual AI Integration**: Uses both Gemini AI and Hugging Face GPT models
 - **🧠 Smart Response Evaluation**: Automatically compares AI responses and provides the most accurate answer
-- **📱 Cross-Platform**: Supports both Android and Windows
-- **💾 Chat History**: Persistent storage of all conversations
+- **� Continuous Contextual Chatting**: AI maintains conversation context across multiple exchanges
+  - Remembers previous messages and images
+  - References earlier discussion points
+  - Maintains conversation flow naturally
+  - Smart context window management (last 20 messages)
+  - Preserves important early messages in long conversations
+- **�📱 Cross-Platform**: Supports both Android and Windows
+- **💾 Chat History**: Persistent storage of all conversations with context preservation
 - **🔍 Text Extraction**: OCR capabilities using Google ML Kit
-- **🎨 Modern UI**: Beautiful, dark-themed interface with animations
+- **🎨 Modern UI**: Beautiful, dark-themed interface with animations and context indicators
 - **🔒 Privacy First**: API keys stored locally, no data shared
 
 ## 🛠️ How It Works
@@ -20,9 +26,19 @@ A modern, creative chatbot interface for Android and Windows that processes imag
 1. **Upload Images**: Take photos or select from gallery/files
 2. **Ask Questions**: Type your query about the images
 3. **Text Extraction**: App automatically extracts text from images using OCR
-4. **Dual AI Processing**: Both Gemini and Hugging Face models process your query
-5. **Smart Evaluation**: AI responses are compared and the best answer is selected
-6. **Instant Response**: Get comprehensive, accurate answers quickly
+4. **Contextual Processing**: App builds conversation context from previous exchanges
+5. **Dual AI Processing**: Both Gemini and Hugging Face models process your query with full context
+6. **Smart Evaluation**: AI responses are compared and the best contextual answer is selected
+7. **Continuous Conversation**: Follow-up questions maintain full conversation context
+8. **Instant Response**: Get comprehensive, contextually-aware answers quickly
+
+### 🧠 Contextual Conversation Features
+
+- **Memory Retention**: AI remembers what you've discussed before
+- **Image References**: Previously uploaded images are referenced in ongoing conversations
+- **Follow-up Awareness**: Questions like "What about this?" or "Can you explain more?" are understood in context
+- **Smart Context Trimming**: Long conversations automatically preserve important early context
+- **Visual Indicators**: See when responses use conversation context with special icons
 
 ## 📋 Prerequisites
 
@@ -169,7 +185,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email your-email@example.com or create an issue on GitHub.
+For support, email sahoosoumya242004@gmail.com or create an issue on GitHub.
 
 ---
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
+import '../widgets/conversation_context_indicator.dart';
 import '../theme/app_theme.dart';
 import 'chat_sessions_screen.dart';
 import 'settings_screen.dart';
@@ -41,11 +42,22 @@ class _ChatScreenState extends State<ChatScreen> {
               if (chatProvider.error != null)
                 _buildErrorBanner(chatProvider.error!),
 
-              // Messages area
+              // Messages area with enhanced context awareness
               Expanded(
                 child: chatProvider.currentMessages.isEmpty
                     ? _buildEmptyState()
-                    : _buildMessagesList(chatProvider),
+                    : Column(
+                        children: [
+                          // Show conversation context indicator for ongoing conversations
+                          ConversationContextIndicator(
+                            messages: chatProvider.currentMessages,
+                            isVisible: chatProvider.currentMessages.length > 2,
+                          ),
+
+                          // Messages list
+                          Expanded(child: _buildMessagesList(chatProvider)),
+                        ],
+                      ),
               ),
 
               // Input area

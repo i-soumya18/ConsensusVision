@@ -38,8 +38,12 @@ class HuggingFaceService implements AIService {
     List<Map<String, dynamic>>? conversationHistory,
   }) async {
     try {
-      // For text-based models, we'll use a conversational approach
-      final response = await _processTextQuery(query, extractedText);
+      // For text-based models, we'll use an enhanced conversational approach
+      final response = await _processTextQuery(
+        query,
+        extractedText,
+        conversationHistory,
+      );
 
       if (response.isSuccessful) {
         return response;
@@ -57,19 +61,25 @@ class HuggingFaceService implements AIService {
 
   Future<AIResponse> _processTextQuery(
     String query,
-    String? extractedText,
-  ) async {
+    String? extractedText, [
+    List<Map<String, dynamic>>? conversationHistory,
+  ]) async {
     try {
-      String prompt = _buildPrompt(query, extractedText);
+      String prompt = _buildEnhancedPrompt(
+        query,
+        extractedText,
+        conversationHistory,
+      );
 
       final requestBody = {
         'inputs': prompt,
         'parameters': {
           'max_length': 1000,
-          'temperature': 0.7,
+          'temperature': _getContextualTemperature(conversationHistory),
           'top_p': 0.9,
           'do_sample': true,
           'return_full_text': false,
+          'repetition_penalty': 1.2, // Reduce repetition in conversations
         },
         'options': {'wait_for_model': true},
       };
@@ -93,32 +103,143 @@ class HuggingFaceService implements AIService {
             return AIResponse.success(
               content: generatedText,
               model: modelName,
-              confidence: 0.8,
+              confidence: _calculateEnhancedConfidence(
+                generatedText,
+                conversationHistory,
+              ),
               metadata: {
                 'model_id': modelId,
                 'response_length': generatedText.length,
+                'has_conversation_context':
+                    conversationHistory?.isNotEmpty ?? false,
               },
             );
           }
         }
-
-        return AIResponse.error(
-          error: 'No valid response generated',
-          model: modelName,
-        );
-      } else {
-        final errorBody = response.body;
-        return AIResponse.error(
-          error: 'HTTP ${response.statusCode}: $errorBody',
-          model: modelName,
-        );
       }
+
+      return AIResponse.error(
+        error:
+            'Invalid response format or empty content. Status: ${response.statusCode}',
+        model: modelName,
+      );
     } catch (e) {
       return AIResponse.error(
         error: 'Exception in text processing: $e',
         model: modelName,
       );
     }
+  }
+
+  // Enhanced prompt building with conversation context
+  String _buildEnhancedPrompt(
+    String query,
+    String? extractedText,
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
+    String prompt = '';
+
+    // Add conversation context if available
+    if (conversationHistory != null && conversationHistory.isNotEmpty) {
+      prompt += 'Previous conversation context:\n';
+
+      // Include last few exchanges for context
+      final recentHistory = conversationHistory.length > 4
+          ? conversationHistory.sublist(conversationHistory.length - 4)
+          : conversationHistory;
+
+      for (final exchange in recentHistory) {
+        final role = exchange['role'] as String;
+        final content = exchange['content'];
+
+        if (content is List && content.isNotEmpty) {
+          final textContent =
+              content.firstWhere(
+                    (c) => c['type'] == 'text',
+                    orElse: () => {'text': ''},
+                  )['text']
+                  as String;
+
+          if (textContent.isNotEmpty) {
+            prompt +=
+                '${role == 'user' ? 'Human' : 'Assistant'}: ${textContent.trim()}\n';
+          }
+        }
+      }
+      prompt += '\n';
+    }
+
+    if (extractedText != null && extractedText.isNotEmpty) {
+      prompt += 'Context from image text: $extractedText\n\n';
+    }
+
+    prompt += 'Human: $query\n\nAssistant: ';
+
+    return prompt;
+  }
+
+  // Get contextual temperature based on conversation length
+  double _getContextualTemperature(
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
+    if (conversationHistory == null || conversationHistory.isEmpty) {
+      return 0.7; // Standard temperature for new conversations
+    }
+
+    // Lower temperature for longer conversations to maintain consistency
+    if (conversationHistory.length > 8) {
+      return 0.6; // More focused responses for long conversations
+    } else if (conversationHistory.length > 4) {
+      return 0.65; // Slightly more focused
+    }
+
+    return 0.7; // Standard temperature
+  }
+
+  // Enhanced confidence calculation
+  double _calculateEnhancedConfidence(
+    String content,
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
+    double confidence = 0.8; // Base confidence for HuggingFace
+
+    // Adjust based on content quality
+    if (content.length < 10) {
+      confidence *= 0.6; // Very short responses are less confident
+    } else if (content.length > 50) {
+      confidence *= 1.1; // Longer responses are generally better
+    }
+
+    // Boost confidence if response shows contextual awareness
+    if (conversationHistory != null && conversationHistory.isNotEmpty) {
+      final contextualIndicators = [
+        'as mentioned',
+        'previously',
+        'earlier',
+        'continuing',
+        'building on',
+        'regarding',
+        'about that',
+      ];
+
+      final isContextual = contextualIndicators.any(
+        (indicator) => content.toLowerCase().contains(indicator),
+      );
+
+      if (isContextual) {
+        confidence *= 1.1; // Boost for contextual responses
+      }
+    }
+
+    // Reduce confidence for error indicators
+    if (content.toLowerCase().contains('sorry') ||
+        content.toLowerCase().contains('cannot') ||
+        content.toLowerCase().contains('unable') ||
+        content.toLowerCase().contains('don\'t know')) {
+      confidence *= 0.7;
+    }
+
+    return confidence.clamp(0.0, 1.0);
   }
 
   Future<AIResponse> _tryAlternativeModels(
@@ -148,18 +269,6 @@ class HuggingFaceService implements AIService {
       error: 'All alternative models failed',
       model: modelName,
     );
-  }
-
-  String _buildPrompt(String query, String? extractedText) {
-    String prompt = '';
-
-    if (extractedText != null && extractedText.isNotEmpty) {
-      prompt += 'Context from image text: $extractedText\n\n';
-    }
-
-    prompt += 'Human: $query\n\nAssistant: ';
-
-    return prompt;
   }
 }
 

@@ -7,21 +7,23 @@ import 'ai_service.dart';
 class GeminiService implements AIService {
   final String apiKey;
   static const String baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/openai/';
+      'https://generativelanguage.googleapis.com/v1beta/models/';
 
   GeminiService({required this.apiKey});
 
   @override
-  String get modelName => 'Gemini 2.5 Flash';
+  String get modelName => 'Gemini 2.0 Flash';
 
   @override
   Future<bool> isAvailable() async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl}models'),
-        headers: {'Authorization': 'Bearer $apiKey'},
+        Uri.parse('${baseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
       );
-      return response.statusCode == 200;
+      return response.statusCode == 200 ||
+          response.statusCode ==
+              400; // 400 is expected without proper request body
     } catch (e) {
       return false;
     }
@@ -35,86 +37,119 @@ class GeminiService implements AIService {
     List<Map<String, dynamic>>? conversationHistory,
   }) async {
     try {
-      // Build messages array with conversation history
-      final List<Map<String, dynamic>> messages = [];
+      // Build the request body using Gemini's format
+      final List<Map<String, dynamic>> contents = [];
 
-      // Add conversation history if provided
+      // Add conversation history if provided (convert to Gemini format)
       if (conversationHistory != null && conversationHistory.isNotEmpty) {
-        messages.addAll(conversationHistory);
+        for (final entry in conversationHistory) {
+          final role = entry['role'] as String;
+          final content = entry['content'];
+
+          String textContent = '';
+          if (content is List && content.isNotEmpty) {
+            final textPart = content.firstWhere(
+              (c) => c['type'] == 'text',
+              orElse: () => {'text': ''},
+            );
+            textContent = textPart['text'] as String? ?? '';
+          }
+
+          if (textContent.isNotEmpty) {
+            contents.add({
+              'role': role == 'user' ? 'user' : 'model',
+              'parts': [
+                {'text': textContent},
+              ],
+            });
+          }
+        }
       }
 
       // Build current message content
-      final List<Map<String, dynamic>> content = [];
+      final List<Map<String, dynamic>> parts = [];
 
-      // Add text content
-      final promptText = _buildPrompt(query, extractedText);
-      content.add({'type': 'text', 'text': promptText});
+      // Add enhanced text content
+      final promptText = _buildEnhancedPrompt(
+        query,
+        extractedText,
+        conversationHistory,
+      );
+      parts.add({'text': promptText});
 
-      // Add images if provided
+      // Add images if provided (Gemini format)
       if (images != null && images.isNotEmpty) {
         for (final image in images) {
           final bytes = await image.readAsBytes();
           final base64Image = base64Encode(bytes);
-          content.add({
-            'type': 'image_url',
-            'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+          final mimeType = _getMimeType(image.path);
+          parts.add({
+            'inline_data': {'mime_type': mimeType, 'data': base64Image},
           });
         }
       }
 
       // Add current user message
-      messages.add({'role': 'user', 'content': content});
+      contents.add({'role': 'user', 'parts': parts});
 
       final requestBody = {
-        'model': 'gemini-2.0-flash',
-        'messages': messages,
-        'max_tokens': 2048,
-        'temperature': 0.7,
+        'contents': contents,
+        'generationConfig': {
+          'temperature': _getContextualTemperature(conversationHistory),
+          'topP': 0.95,
+          'topK': 40,
+          'maxOutputTokens': 2048,
+        },
       };
 
       final response = await http.post(
-        Uri.parse('${baseUrl}chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
+        Uri.parse('${baseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final choices = jsonResponse['choices'] as List?;
+        final candidates = jsonResponse['candidates'] as List?;
 
-        if (choices != null && choices.isNotEmpty) {
-          final choice = choices[0];
-          final message = choice['message'];
-          final content = message['content'] as String;
-          final finishReason = choice['finish_reason'] as String?;
+        if (candidates != null && candidates.isNotEmpty) {
+          final candidate = candidates[0];
+          final content = candidate['content'];
+          final parts = content['parts'] as List?;
 
-          // Calculate confidence based on finish reason and response quality
-          double confidence = _calculateConfidence(finishReason, content);
+          if (parts != null && parts.isNotEmpty) {
+            final text = parts[0]['text'] as String?;
+            final finishReason = candidate['finishReason'] as String?;
 
-          return AIResponse.success(
-            content: content,
-            model: modelName,
-            confidence: confidence,
-            metadata: {
-              'finishReason': finishReason,
-              'usage': jsonResponse['usage'],
-            },
-          );
-        } else {
-          return AIResponse.error(
-            error: 'No valid response generated',
-            model: modelName,
-          );
+            if (text != null && text.isNotEmpty) {
+              // Calculate enhanced confidence based on context and response quality
+              double confidence = _calculateEnhancedConfidence(
+                finishReason,
+                text,
+                conversationHistory,
+              );
+
+              return AIResponse.success(
+                content: text,
+                model: modelName,
+                confidence: confidence,
+                metadata: {
+                  'finishReason': finishReason,
+                  'usage': jsonResponse['usageMetadata'],
+                },
+              );
+            }
+          }
         }
-      } else {
-        final errorBody = jsonDecode(response.body);
-        final errorMessage =
-            errorBody['error']?['message'] ?? 'Unknown error occurred';
+
         return AIResponse.error(
-          error: 'API Error (${response.statusCode}): $errorMessage',
+          error: 'No valid response generated',
+          model: modelName,
+        );
+      } else {
+        final errorBody = response.body;
+        return AIResponse.error(
+          error: 'API Error (${response.statusCode}): $errorBody',
           model: modelName,
         );
       }
@@ -126,24 +161,102 @@ class GeminiService implements AIService {
     }
   }
 
-  String _buildPrompt(String query, String? extractedText) {
-    String prompt = 'User query: $query\n\n';
+  // Enhanced prompt building with context awareness
+  String _buildEnhancedPrompt(
+    String query,
+    String? extractedText,
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
+    String prompt = '';
+
+    // Add system-like instructions at the beginning
+    prompt +=
+        '''You are an advanced AI assistant specialized in image analysis and contextual conversations. 
+Always maintain awareness of conversation context and provide detailed, helpful responses.
+
+''';
+
+    // Add contextual awareness
+    if (conversationHistory != null && conversationHistory.isNotEmpty) {
+      final hasImages = conversationHistory.any(
+        (msg) =>
+            msg['content'] is List &&
+            (msg['content'] as List).any(
+              (content) =>
+                  content['type'] == 'image_url' ||
+                  content.containsKey('inline_data'),
+            ),
+      );
+
+      if (hasImages) {
+        prompt += 'Building on our previous image analysis and discussion:\n\n';
+      } else {
+        prompt += 'Continuing our conversation:\n\n';
+      }
+    }
+
+    prompt += 'Current query: $query\n\n';
 
     if (extractedText != null && extractedText.isNotEmpty) {
-      prompt += 'Extracted text from image(s):\n$extractedText\n\n';
+      prompt += 'Extracted text from current image(s):\n$extractedText\n\n';
     }
 
     prompt += '''
-Please analyze the provided content and answer the user's query accurately and helpfully. 
-If images are provided, analyze them carefully and incorporate visual information into your response.
-If only text is provided, focus on understanding and responding to the text query comprehensively.
-Be detailed, accurate, and conversational in your response.
+Please provide a comprehensive response that:
+- Directly addresses the current query
+- Maintains awareness of our conversation context
+- Incorporates any visual information from images
+- Builds upon previous discussion points when relevant
+- Is detailed, accurate, and conversational
 ''';
 
     return prompt;
   }
 
-  double _calculateConfidence(String? finishReason, String content) {
+  // Get MIME type for better image handling
+  String _getMimeType(String filePath) {
+    final extension = filePath.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'bmp':
+        return 'image/bmp';
+      default:
+        return 'image/jpeg'; // Default fallback
+    }
+  }
+
+  // Adjust temperature based on conversation context
+  double _getContextualTemperature(
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
+    if (conversationHistory == null || conversationHistory.isEmpty) {
+      return 0.7; // Standard temperature for new conversations
+    }
+
+    // Lower temperature for longer conversations to maintain consistency
+    if (conversationHistory.length > 10) {
+      return 0.6; // More focused and consistent responses
+    } else if (conversationHistory.length > 5) {
+      return 0.65; // Slightly more focused
+    }
+
+    return 0.7; // Standard temperature
+  }
+
+  // Enhanced confidence calculation with context awareness
+  double _calculateEnhancedConfidence(
+    String? finishReason,
+    String content,
+    List<Map<String, dynamic>>? conversationHistory,
+  ) {
     double confidence = 0.8; // Base confidence
 
     // Adjust based on finish reason
@@ -161,11 +274,31 @@ Be detailed, accurate, and conversational in your response.
         confidence = 0.8;
     }
 
-    // Adjust based on content quality (simple heuristics)
+    // Adjust based on content quality
     if (content.length < 10) {
       confidence *= 0.6; // Very short responses are less confident
     } else if (content.length > 100) {
       confidence *= 1.1; // Longer, detailed responses are more confident
+    }
+
+    // Boost confidence for contextual responses
+    if (conversationHistory != null && conversationHistory.isNotEmpty) {
+      final contextualIndicators = [
+        'as we discussed',
+        'from the previous',
+        'building on',
+        'continuing from',
+        'as mentioned',
+        'referring to',
+      ];
+
+      final isContextual = contextualIndicators.any(
+        (indicator) => content.toLowerCase().contains(indicator),
+      );
+
+      if (isContextual) {
+        confidence *= 1.15; // Boost confidence for contextual responses
+      }
     }
 
     // Check for common error indicators
