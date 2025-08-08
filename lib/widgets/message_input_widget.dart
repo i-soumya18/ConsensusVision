@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../services/theme_service.dart';
 import '../screens/prompt_library_screen.dart';
 
 class MessageInputWidget extends StatefulWidget {
@@ -447,51 +449,58 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.onSurfaceColor.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildStyledText(
-              '📁 **Add Images**',
-              Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ) ??
-                  const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      builder: (context) => Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildAttachmentOption(
-                  icon: Icons.camera_alt,
-                  label: 'Camera',
-                  onTap: () => _pickImageFromCamera(),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.onSurfaceColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                _buildAttachmentOption(
-                  icon: Icons.photo_library,
-                  label: 'Gallery',
-                  onTap: () => _pickImageFromGallery(),
+                const SizedBox(height: 20),
+                _buildStyledText(
+                  '📁 **Add Images**',
+                  Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ) ??
+                      const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                _buildAttachmentOption(
-                  icon: Icons.file_copy,
-                  label: 'Files',
-                  onTap: () => _pickImageFromFiles(),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildAttachmentOption(
+                      icon: Icons.camera_alt,
+                      label: 'Camera',
+                      onTap: () => _pickImageFromCamera(),
+                      themeService: themeService,
+                    ),
+                    _buildAttachmentOption(
+                      icon: Icons.photo_library,
+                      label: 'Gallery',
+                      onTap: () => _pickImageFromGallery(),
+                      themeService: themeService,
+                    ),
+                    _buildAttachmentOption(
+                      icon: Icons.file_copy,
+                      label: 'Files',
+                      onTap: () => _pickImageFromFiles(),
+                      themeService: themeService,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 20),
               ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -500,6 +509,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required ThemeService themeService,
   }) {
     return GestureDetector(
       onTap: () {
@@ -512,10 +522,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: themeService.primaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: 30),
+            child: Icon(icon, color: themeService.primaryColor, size: 30),
           ),
           const SizedBox(height: 8),
           Text(label, style: Theme.of(context).textTheme.bodyMedium),

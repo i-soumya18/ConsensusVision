@@ -5,9 +5,9 @@ import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../widgets/conversation_context_indicator.dart';
 import '../theme/app_theme.dart';
+import '../services/theme_service.dart';
 import 'chat_sessions_screen.dart';
 import 'settings_screen.dart';
-import 'package:shimmer/shimmer.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -80,76 +80,67 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: Consumer<ChatProvider>(
-        builder: (context, chatProvider, child) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                chatProvider.currentSession?.title ?? 'ImageQuery AI',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (chatProvider.currentSession != null)
-                Text(
-                  '${chatProvider.currentMessages.length} messages',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return AppBar(
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: themeService.primaryColor,
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
                 ),
+                const SizedBox(width: 12),
+                const Text(
+                  'ImageQuery AI',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            actions: [
+              // New Chat Button
+              IconButton(
+                icon: const Icon(Icons.add_comment),
+                onPressed: () => _createNewChat(),
+                tooltip: 'New Chat',
+                iconSize: 24.0,
+              ),
+              // Chat History Button
+              IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () => _showChatSessions(),
+                tooltip: 'Chat History',
+                iconSize: 24.0,
+              ),
+              // More Options Menu
+              PopupMenuButton<String>(
+                onSelected: _handleMenuAction,
+                iconSize: 24.0,
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings),
+                        SizedBox(width: 12),
+                        Text('Settings'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
+            elevation: 0,
+            backgroundColor: AppTheme.surfaceColor,
           );
         },
       ),
-      actions: [
-        // New Chat Button
-        IconButton(
-          icon: const Icon(Icons.add_comment),
-          onPressed: () => _createNewChat(),
-          tooltip: 'New Chat',
-          iconSize: 24.0,
-        ),
-        // Chat History Button
-        IconButton(
-          icon: const Icon(Icons.history),
-          onPressed: () => _showChatSessions(),
-          tooltip: 'Chat History',
-          iconSize: 24.0,
-        ),
-        // More Options Menu
-        PopupMenuButton<String>(
-          onSelected: _handleMenuAction,
-          iconSize: 24.0,
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'search',
-              child: Row(
-                children: [
-                  Icon(Icons.search),
-                  SizedBox(width: 12),
-                  Text('Search Messages'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings),
-                  SizedBox(width: 12),
-                  Text('Settings'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-      elevation: 0,
-      backgroundColor: AppTheme.surfaceColor,
     );
   }
 
@@ -182,49 +173,53 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.smart_toy,
-              size: 60,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Welcome to ImageQuery AI',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              'Upload images and ask questions. I\'ll analyze them using multiple AI models to give you the most accurate answers.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.onSurfaceColor.withOpacity(0.7),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, child) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.smart_toy,
+                  size: 60,
+                  color: themeService.primaryColor,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
+              const SizedBox(height: 24),
+              Text(
+                'Welcome to ImageQuery AI',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Upload images and ask questions. I\'ll analyze them using multiple AI models to give you the most accurate answers.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+              _buildSuggestionChips(themeService),
+            ],
           ),
-          const SizedBox(height: 32),
-          _buildSuggestionChips(),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildSuggestionChips() {
+  Widget _buildSuggestionChips(ThemeService themeService) {
     final suggestions = [
       'Analyze document',
       'Extract text',
@@ -241,9 +236,9 @@ class _ChatScreenState extends State<ChatScreen> {
           onPressed: () {
             // Auto-fill suggestion in message input
           },
-          backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+          backgroundColor: themeService.primaryColor.withOpacity(0.1),
           labelStyle: TextStyle(
-            color: AppTheme.primaryColor,
+            color: themeService.primaryColor,
             fontWeight: FontWeight.w500,
           ),
         );
@@ -280,9 +275,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'search':
-        _showSearch();
-        break;
       case 'settings':
         _showSettings();
         break;
@@ -292,10 +284,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void _createNewChat() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     chatProvider.createNewChatSession();
-  }
-
-  void _showSearch() {
-    showSearch(context: context, delegate: MessageSearchDelegate());
   }
 
   void _showSettings() {
@@ -315,87 +303,5 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
-  }
-}
-
-class MessageSearchDelegate extends SearchDelegate<String> {
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () => close(context, ''),
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    if (query.isEmpty) {
-      return const Center(child: Text('Enter a search term'));
-    }
-
-    return Consumer<ChatProvider>(
-      builder: (context, chatProvider, child) {
-        return FutureBuilder(
-          future: chatProvider.searchMessages(query),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingShimmer();
-            }
-
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-
-            final messages = snapshot.data ?? [];
-            if (messages.isEmpty) {
-              return const Center(child: Text('No messages found'));
-            }
-
-            return ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                return MessageBubble(message: messages[index]);
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    if (query.isEmpty) {
-      return const Center(child: Text('Search through your message history'));
-    }
-
-    return buildResults(context);
-  }
-
-  Widget _buildLoadingShimmer() {
-    return Shimmer.fromColors(
-      baseColor: AppTheme.surfaceColor,
-      highlightColor: AppTheme.surfaceColor.withOpacity(0.8),
-      child: ListView.builder(
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.all(16),
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-          );
-        },
-      ),
-    );
   }
 }
