@@ -6,6 +6,7 @@ import 'services/config_service.dart';
 import 'services/database_service.dart';
 import 'services/theme_service.dart';
 import 'providers/chat_provider.dart';
+import 'screens/splash_screen.dart';
 import 'screens/setup_screen.dart';
 import 'screens/chat_screen.dart';
 
@@ -56,7 +57,7 @@ class MyApp extends StatelessWidget {
               : themeService.isDarkMode
               ? ThemeMode.dark
               : ThemeMode.light,
-          home: const AppWrapper(),
+          home: const SplashScreen(),
           routes: {
             '/setup': (context) => const SetupScreen(),
             '/chat': (context) => const ChatWrapper(),
