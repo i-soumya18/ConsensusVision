@@ -23,6 +23,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedModel = 'Gemini';
   bool _isLoading = false;
 
+  // API usage tracking
+  int _apiCallLimit = 950;
+  int _apiCallCount = 0;
+  int _apiErrorCount = 0;
+
   // Model parameters
   double _temperature = 0.7;
   double _topP = 0.9;
@@ -54,6 +59,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _useAdvancedParameters = ConfigService.getUseAdvancedParameters();
     _selectedModel = ConfigService.getSelectedModel();
 
+    // Load API usage data
+    _apiCallLimit = ConfigService.getApiCallLimit();
+    _apiCallCount = ConfigService.getApiCallCount();
+    _apiErrorCount = ConfigService.getApiErrorCount();
+
     setState(() => _isLoading = false);
   }
 
@@ -75,6 +85,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _buildApiKeysSection(),
+                const SizedBox(height: 24),
+                _buildApiUsageSection(),
                 const SizedBox(height: 24),
                 _buildModelSelectionSection(),
                 const SizedBox(height: 24),
@@ -214,6 +226,272 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildApiUsageSection() {
+    final usagePercentage = ConfigService.getApiUsagePercentage();
+    final remainingCalls = ConfigService.getRemainingApiCalls();
+    final isLimitReached = ConfigService.isApiLimitReached();
+
+    return _buildSectionCard(
+      title: 'API Usage Monitoring',
+      icon: Icons.analytics,
+      children: [
+        // Daily API Usage Progress
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daily API Usage',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: usagePercentage / 100,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isLimitReached
+                          ? Colors.red
+                          : usagePercentage > 80
+                          ? Colors.orange
+                          : Colors.green,
+                    ),
+                    minHeight: 8,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$_apiCallCount / $_apiCallLimit calls',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        '${usagePercentage.toStringAsFixed(1)}%',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isLimitReached ? Colors.red : null,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Statistics Cards
+        Row(
+          children: [
+            Expanded(
+              child: _buildUsageStatCard(
+                'Remaining',
+                remainingCalls.toString(),
+                Icons.schedule,
+                Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildUsageStatCard(
+                'Errors',
+                _apiErrorCount.toString(),
+                Icons.error_outline,
+                Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // API Call Limit Setting
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daily API Call Limit',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: _apiCallLimit.toString(),
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Enter daily API call limit',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    onFieldSubmitted: (value) {
+                      final limit = int.tryParse(value) ?? 950;
+                      _updateApiCallLimit(limit);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _resetApiUsageCounters,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Warning or info message
+        if (isLimitReached)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              border: Border.all(color: Colors.red.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning, color: Colors.red.shade600, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Daily API limit reached! Consider increasing the limit or wait for daily reset.',
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (usagePercentage > 80)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              border: Border.all(color: Colors.orange.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info, color: Colors.orange.shade600, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Approaching daily API limit. $remainingCalls calls remaining.',
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Text(
+            'API usage is tracked daily and resets automatically at midnight. Default limit is 950 calls per day.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildUsageStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateApiCallLimit(int newLimit) async {
+    await ConfigService.setApiCallLimit(newLimit);
+    setState(() {
+      _apiCallLimit = newLimit;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('API call limit updated to $newLimit per day'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _resetApiUsageCounters() async {
+    await ConfigService.resetApiUsageCounters();
+    setState(() {
+      _apiCallCount = 0;
+      _apiErrorCount = 0;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('API usage counters reset successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Widget _buildModelSelectionSection() {

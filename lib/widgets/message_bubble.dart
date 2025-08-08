@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/message.dart';
@@ -106,15 +107,19 @@ class MessageBubble extends StatelessWidget {
                           ],
                         )
                       else
-                        SelectableText(
-                          message.content,
-                          style: TextStyle(
-                            color: isUser
-                                ? Colors.white
-                                : AppTheme.onSurfaceColor,
-                            fontSize: 16,
-                          ),
-                        ),
+                        // Use markdown rendering for AI responses, SelectableText for user messages
+                        isUser
+                            ? SelectableText(
+                                message.content,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              )
+                            : _buildMarkdownContent(
+                                message.content,
+                                themeService,
+                              ),
 
                       const SizedBox(height: 4),
 
@@ -238,6 +243,124 @@ class MessageBubble extends StatelessWidget {
     if (confidence >= 0.8) return AppTheme.successColor;
     if (confidence >= 0.6) return Colors.orange;
     return AppTheme.errorColor;
+  }
+
+  Widget _buildMarkdownContent(String content, ThemeService themeService) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 0),
+      child: MarkdownBody(
+        data: content,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          // Text styles
+          p: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 16,
+            height: 1.4,
+          ),
+          h1: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+          h2: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+          h3: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+          h4: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+          h5: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+          h6: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+
+          // Code styles
+          code: TextStyle(
+            backgroundColor: themeService.primaryColor.withOpacity(0.1),
+            color: themeService.primaryColor,
+            fontFamily: 'monospace',
+            fontSize: 14,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: themeService.primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: themeService.primaryColor.withOpacity(0.2),
+            ),
+          ),
+          codeblockPadding: const EdgeInsets.all(12),
+
+          // List styles
+          listBullet: TextStyle(color: themeService.primaryColor, fontSize: 16),
+
+          // Quote styles
+          blockquote: TextStyle(
+            color: AppTheme.onSurfaceColor.withOpacity(0.8),
+            fontStyle: FontStyle.italic,
+            fontSize: 16,
+          ),
+          blockquoteDecoration: BoxDecoration(
+            color: themeService.primaryColor.withOpacity(0.05),
+            border: Border(
+              left: BorderSide(color: themeService.primaryColor, width: 4),
+            ),
+          ),
+          blockquotePadding: const EdgeInsets.all(12),
+
+          // Link styles
+          a: TextStyle(
+            color: themeService.primaryColor,
+            decoration: TextDecoration.underline,
+          ),
+
+          // Table styles
+          tableHead: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontWeight: FontWeight.bold,
+          ),
+          tableBody: TextStyle(color: AppTheme.onSurfaceColor),
+          tableBorder: TableBorder.all(
+            color: themeService.primaryColor.withOpacity(0.3),
+            width: 1,
+          ),
+
+          // Strong and emphasis
+          strong: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontWeight: FontWeight.bold,
+          ),
+          em: TextStyle(
+            color: AppTheme.onSurfaceColor,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        onTapLink: (text, href, title) {
+          // Handle link taps here if needed
+          // You could use url_launcher package to open external links
+        },
+      ),
+    );
   }
 
   // Check if the AI response shows contextual awareness

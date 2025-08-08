@@ -105,6 +105,9 @@ class GeminiService implements AIService {
       );
 
       if (response.statusCode == 200) {
+        // Track successful API call
+        await ConfigService.incrementApiCallCount();
+
         final jsonResponse = jsonDecode(response.body);
         final candidates = jsonResponse['candidates'] as List?;
 
@@ -143,6 +146,9 @@ class GeminiService implements AIService {
           model: modelName,
         );
       } else {
+        // Track API error
+        await ConfigService.incrementApiErrorCount();
+
         final errorBody = response.body;
         return AIResponse.error(
           error: 'API Error (${response.statusCode}): $errorBody',
@@ -150,6 +156,9 @@ class GeminiService implements AIService {
         );
       }
     } catch (e) {
+      // Track API error for exceptions
+      await ConfigService.incrementApiErrorCount();
+
       return AIResponse.error(
         error: 'Exception occurred: $e',
         model: modelName,

@@ -14,6 +14,12 @@ class ConfigService {
   static const String _selectedModelKey = 'selected_model';
   static const String _systemPromptKey = 'system_prompt';
 
+  // API Usage tracking keys
+  static const String _apiCallLimitKey = 'api_call_limit';
+  static const String _apiCallCountKey = 'api_call_count';
+  static const String _apiErrorCountKey = 'api_error_count';
+  static const String _lastResetDateKey = 'last_reset_date';
+
   static SharedPreferences? _prefs;
 
   static Future<void> init() async {
@@ -154,6 +160,16 @@ class ConfigService {
 - Offer follow-up suggestions or related assistance
 - End with an invitation for clarification or additional help
 
+## Response Formatting:
+- Use **Markdown formatting** for all responses to enhance readability
+- Use **bold** for emphasis and important points
+- Use *italics* for subtle emphasis or technical terms
+- Use `code blocks` for code, commands, or technical references
+- Use headings (##, ###) to organize complex responses
+- Use bullet points and numbered lists for structured information
+- Use > blockquotes for important notes or warnings
+- Use tables when presenting comparative data
+
 ## Special Considerations:
 - For creative tasks: Encourage originality while respecting intellectual property
 - For technical queries: Provide step-by-step guidance with safety warnings when applicable
@@ -161,7 +177,7 @@ class ConfigService {
 - For educational content: Use appropriate pedagogical approaches and encourage critical thinking
 - For image analysis: Provide detailed, accurate descriptions and insights about visual content
 
-Always maintain awareness of conversation context and provide detailed, helpful responses.''';
+Always maintain awareness of conversation context and provide detailed, helpful responses using proper markdown formatting.''';
   }
 
   static Future<void> resetSystemPromptToDefault() async {
@@ -187,5 +203,87 @@ Always maintain awareness of conversation context and provide detailed, helpful 
       'maxTokens': getMaxTokens(),
       'useAdvanced': getUseAdvancedParameters(),
     };
+  }
+
+  // API Usage tracking methods
+  static Future<void> setApiCallLimit(int limit) async {
+    await _prefs!.setInt(_apiCallLimitKey, limit);
+  }
+
+  static int getApiCallLimit() {
+    return _prefs!.getInt(_apiCallLimitKey) ?? 950; // Default to 950 per day
+  }
+
+  static Future<void> setApiCallCount(int count) async {
+    await _prefs!.setInt(_apiCallCountKey, count);
+  }
+
+  static int getApiCallCount() {
+    return _prefs!.getInt(_apiCallCountKey) ?? 0;
+  }
+
+  static Future<void> incrementApiCallCount() async {
+    final currentCount = getApiCallCount();
+    await setApiCallCount(currentCount + 1);
+    await _checkAndResetDailyCounters();
+  }
+
+  static Future<void> setApiErrorCount(int count) async {
+    await _prefs!.setInt(_apiErrorCountKey, count);
+  }
+
+  static int getApiErrorCount() {
+    return _prefs!.getInt(_apiErrorCountKey) ?? 0;
+  }
+
+  static Future<void> incrementApiErrorCount() async {
+    final currentCount = getApiErrorCount();
+    await setApiErrorCount(currentCount + 1);
+    await _checkAndResetDailyCounters();
+  }
+
+  static Future<void> setLastResetDate(String date) async {
+    await _prefs!.setString(_lastResetDateKey, date);
+  }
+
+  static String? getLastResetDate() {
+    return _prefs!.getString(_lastResetDateKey);
+  }
+
+  static Future<void> _checkAndResetDailyCounters() async {
+    final today = DateTime.now().toIso8601String().split(
+      'T',
+    )[0]; // YYYY-MM-DD format
+    final lastReset = getLastResetDate();
+
+    if (lastReset != today) {
+      // Reset daily counters
+      await setApiCallCount(0);
+      await setApiErrorCount(0);
+      await setLastResetDate(today);
+    }
+  }
+
+  static Future<void> resetApiUsageCounters() async {
+    await setApiCallCount(0);
+    await setApiErrorCount(0);
+    await setLastResetDate(DateTime.now().toIso8601String().split('T')[0]);
+  }
+
+  static double getApiUsagePercentage() {
+    final limit = getApiCallLimit();
+    final count = getApiCallCount();
+    if (limit == 0) return 0.0;
+    return (count / limit * 100).clamp(0.0, 100.0);
+  }
+
+  static int getRemainingApiCalls() {
+    final limit = getApiCallLimit();
+    final count = getApiCallCount();
+    return (limit - count).clamp(0, limit);
+  }
+
+  static bool isApiLimitReached() {
+    return getApiCallCount() >= getApiCallLimit();
   }
 }

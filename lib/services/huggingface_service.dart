@@ -88,6 +88,9 @@ class HuggingFaceService implements AIService {
       );
 
       if (response.statusCode == 200) {
+        // Track successful API call
+        await ConfigService.incrementApiCallCount();
+
         final jsonResponse = jsonDecode(response.body);
 
         if (jsonResponse is List && jsonResponse.isNotEmpty) {
@@ -112,12 +115,18 @@ class HuggingFaceService implements AIService {
         }
       }
 
+      // Track API error for non-200 responses
+      await ConfigService.incrementApiErrorCount();
+
       return AIResponse.error(
         error:
             'Invalid response format or empty content. Status: ${response.statusCode}',
         model: modelName,
       );
     } catch (e) {
+      // Track API error for exceptions
+      await ConfigService.incrementApiErrorCount();
+
       return AIResponse.error(
         error: 'Exception in text processing: $e',
         model: modelName,
