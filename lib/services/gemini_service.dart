@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/ai_response.dart';
 import 'ai_service.dart';
+import 'config_service.dart';
 
 class GeminiService implements AIService {
   final String apiKey;
@@ -94,12 +95,7 @@ class GeminiService implements AIService {
 
       final requestBody = {
         'contents': contents,
-        'generationConfig': {
-          'temperature': _getContextualTemperature(conversationHistory),
-          'topP': 0.95,
-          'topK': 40,
-          'maxOutputTokens': 2048,
-        },
+        'generationConfig': await _getGenerationConfig(conversationHistory),
       };
 
       final response = await http.post(
@@ -233,7 +229,38 @@ Please provide a comprehensive response that:
     }
   }
 
-  // Adjust temperature based on conversation context
+  // Get generation config with user preferences and contextual adjustments
+  Future<Map<String, dynamic>> _getGenerationConfig(
+    List<Map<String, dynamic>>? conversationHistory,
+  ) async {
+    // Get user preferences from ConfigService
+    final useAdvancedParams = await ConfigService.getUseAdvancedParameters();
+
+    if (!useAdvancedParams) {
+      // Use optimal defaults when advanced parameters are disabled
+      return {
+        'temperature': _getContextualTemperature(conversationHistory),
+        'topP': 0.9,
+        'topK': 40,
+        'maxOutputTokens': 2048,
+      };
+    }
+
+    // Use user-configured parameters when advanced mode is enabled
+    final temperature = await ConfigService.getTemperature();
+    final topP = await ConfigService.getTopP();
+    final topK = await ConfigService.getTopK();
+    final maxTokens = await ConfigService.getMaxTokens();
+
+    return {
+      'temperature': temperature,
+      'topP': topP,
+      'topK': topK,
+      'maxOutputTokens': maxTokens,
+    };
+  }
+
+  // Adjust temperature based on conversation context (used when advanced params are off)
   double _getContextualTemperature(
     List<Map<String, dynamic>>? conversationHistory,
   ) {

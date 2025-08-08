@@ -20,6 +20,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedModel = 'Gemini';
   bool _isLoading = false;
 
+  // Model parameters
+  double _temperature = 0.7;
+  double _topP = 0.9;
+  int _topK = 40;
+  int _maxTokens = 2048;
+  bool _useAdvancedParameters = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +41,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _geminiApiController.text = geminiKey ?? '';
     _huggingFaceApiController.text = hfKey ?? '';
+
+    // Load model parameters
+    _temperature = ConfigService.getTemperature();
+    _topP = ConfigService.getTopP();
+    _topK = ConfigService.getTopK();
+    _maxTokens = ConfigService.getMaxTokens();
+    _useAdvancedParameters = ConfigService.getUseAdvancedParameters();
 
     setState(() => _isLoading = false);
   }
@@ -57,6 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildApiKeysSection(),
                 const SizedBox(height: 24),
                 _buildModelSelectionSection(),
+                const SizedBox(height: 24),
+                _buildModelParametersSection(),
                 const SizedBox(height: 24),
                 _buildConversationSection(),
                 const SizedBox(height: 24),
@@ -239,6 +255,262 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Auto-select uses AI evaluation to choose the best model for each query.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModelParametersSection() {
+    return _buildSectionCard(
+      title: 'Model Parameters',
+      icon: Icons.tune,
+      children: [
+        // Advanced parameters toggle
+        SwitchListTile(
+          title: const Text('Advanced Parameters'),
+          subtitle: const Text('Fine-tune AI response generation'),
+          value: _useAdvancedParameters,
+          activeColor: AppTheme.primaryColor,
+          onChanged: (value) async {
+            setState(() {
+              _useAdvancedParameters = value;
+            });
+            await ConfigService.setUseAdvancedParameters(value);
+            _showSnackBar(
+              value
+                  ? '🚀 **Advanced parameters** enabled'
+                  : '✅ Using **optimal defaults**',
+            );
+          },
+        ),
+
+        if (_useAdvancedParameters) ...[
+          const Divider(),
+
+          // Temperature Slider
+          _buildParameterSlider(
+            label: 'Temperature',
+            subtitle: 'Controls randomness (0.0 = focused, 1.0 = creative)',
+            value: _temperature,
+            min: 0.0,
+            max: 1.0,
+            divisions: 10,
+            onChanged: (value) async {
+              setState(() {
+                _temperature = value;
+              });
+              await ConfigService.setTemperature(value);
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Top-P Slider
+          _buildParameterSlider(
+            label: 'Top-P (Nucleus Sampling)',
+            subtitle: 'Controls diversity (0.1 = narrow, 1.0 = diverse)',
+            value: _topP,
+            min: 0.1,
+            max: 1.0,
+            divisions: 9,
+            onChanged: (value) async {
+              setState(() {
+                _topP = value;
+              });
+              await ConfigService.setTopP(value);
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Top-K Slider
+          _buildParameterSlider(
+            label: 'Top-K',
+            subtitle: 'Limits vocabulary (1 = restrictive, 100 = open)',
+            value: _topK.toDouble(),
+            min: 1,
+            max: 100,
+            divisions: 99,
+            isInteger: true,
+            onChanged: (value) async {
+              setState(() {
+                _topK = value.round();
+              });
+              await ConfigService.setTopK(_topK);
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Max Tokens Slider
+          _buildParameterSlider(
+            label: 'Max Tokens',
+            subtitle: 'Maximum response length (512 = short, 4096 = long)',
+            value: _maxTokens.toDouble(),
+            min: 512,
+            max: 4096,
+            divisions: 7,
+            isInteger: true,
+            onChanged: (value) async {
+              setState(() {
+                _maxTokens = value.round();
+              });
+              await ConfigService.setMaxTokens(_maxTokens);
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Reset to defaults button
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await ConfigService.resetModelParameters();
+                    await _loadSettings();
+                    _showSnackBar(
+                      '🔄 **Model parameters** reset to optimal defaults',
+                    );
+                  },
+                  icon: const Icon(Icons.restore),
+                  label: const Text('Reset to Optimal Defaults'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    side: BorderSide(color: AppTheme.primaryColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Info card
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '💡 **Tip**: Default values are optimized for best results. Experiment carefully!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    '✅ Using optimal parameters for best AI responses',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildParameterSlider({
+    required String label,
+    required String subtitle,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required Function(double) onChanged,
+    bool isInteger = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                isInteger ? value.round().toString() : value.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: AppTheme.primaryColor,
+            inactiveTrackColor: AppTheme.primaryColor.withOpacity(0.3),
+            thumbColor: AppTheme.primaryColor,
+            overlayColor: AppTheme.primaryColor.withOpacity(0.2),
+            valueIndicatorColor: AppTheme.primaryColor,
+          ),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
           ),
         ),
       ],

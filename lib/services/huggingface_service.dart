@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/ai_response.dart';
 import 'ai_service.dart';
+import 'config_service.dart';
 
 class HuggingFaceService implements AIService {
   final String apiKey;
@@ -73,14 +74,7 @@ class HuggingFaceService implements AIService {
 
       final requestBody = {
         'inputs': prompt,
-        'parameters': {
-          'max_length': 1000,
-          'temperature': _getContextualTemperature(conversationHistory),
-          'top_p': 0.9,
-          'do_sample': true,
-          'return_full_text': false,
-          'repetition_penalty': 1.2, // Reduce repetition in conversations
-        },
+        'parameters': await _getGenerationParameters(conversationHistory),
         'options': {'wait_for_model': true},
       };
 
@@ -178,7 +172,41 @@ class HuggingFaceService implements AIService {
     return prompt;
   }
 
-  // Get contextual temperature based on conversation length
+  // Get generation parameters with user preferences and contextual adjustments
+  Future<Map<String, dynamic>> _getGenerationParameters(
+    List<Map<String, dynamic>>? conversationHistory,
+  ) async {
+    // Get user preferences from ConfigService
+    final useAdvancedParams = await ConfigService.getUseAdvancedParameters();
+
+    if (!useAdvancedParams) {
+      // Use optimal defaults when advanced parameters are disabled
+      return {
+        'max_length': 1000,
+        'temperature': _getContextualTemperature(conversationHistory),
+        'top_p': 0.9,
+        'do_sample': true,
+        'return_full_text': false,
+        'repetition_penalty': 1.2, // Reduce repetition in conversations
+      };
+    }
+
+    // Use user-configured parameters when advanced mode is enabled
+    final temperature = await ConfigService.getTemperature();
+    final topP = await ConfigService.getTopP();
+    final maxTokens = await ConfigService.getMaxTokens();
+
+    return {
+      'max_length': maxTokens,
+      'temperature': temperature,
+      'top_p': topP,
+      'do_sample': true,
+      'return_full_text': false,
+      'repetition_penalty': 1.2, // Keep this for better conversation quality
+    };
+  }
+
+  // Adjust temperature based on conversation context (used when advanced params are off)
   double _getContextualTemperature(
     List<Map<String, dynamic>>? conversationHistory,
   ) {

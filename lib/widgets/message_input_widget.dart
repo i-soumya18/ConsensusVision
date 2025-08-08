@@ -159,14 +159,17 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     textInputAction: TextInputAction.newline,
                     decoration: InputDecoration(
                       hintText: _selectedPromptTemplate != null
-                          ? 'Enhanced AI prompt active - type your question...'
-                          : 'Let\'s take off! 🚀',
+                          ? '✨ Enhanced AI prompt active - type your question...'
+                          : '🚀 Let\'s take off!',
                       hintStyle: _selectedPromptTemplate != null
                           ? TextStyle(
                               color: AppTheme.primaryColor.withOpacity(0.7),
                               fontWeight: FontWeight.w500,
                             )
-                          : null,
+                          : TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryColor.withOpacity(0.8),
+                            ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -247,9 +250,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '🚀 Enhanced AI Prompt Active',
-                  style: TextStyle(
+                _buildStyledText(
+                  '🚀 **Enhanced AI Prompt** Active',
+                  TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
                     fontSize: 14,
@@ -280,7 +283,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               _promptAnimationController.reverse();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('✨ Prompt template cleared'),
+                  content: _buildStyledText(
+                    '✨ **Prompt template** cleared',
+                    const TextStyle(color: Colors.white),
+                  ),
                   backgroundColor: AppTheme.primaryColor,
                   duration: const Duration(seconds: 2),
                 ),
@@ -455,9 +461,12 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               ),
             ),
             const SizedBox(height: 20),
-            Text(
-              'Add Images',
-              style: Theme.of(context).textTheme.headlineSmall,
+            _buildStyledText(
+              '📁 **Add Images**',
+              Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ) ??
+                  const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Row(
@@ -549,9 +558,12 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   Future<void> _pickImageFromFiles() async {
     // Temporarily disabled to avoid build issues
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Image selection temporarily disabled'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: _buildStyledText(
+          '⚠️ **Image selection** temporarily disabled',
+          const TextStyle(color: Colors.white),
+        ),
+        duration: const Duration(seconds: 2),
       ),
     );
     return;
@@ -566,6 +578,64 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     setState(() {
       _selectedImages.removeAt(index);
     });
+  }
+
+  // Helper method to create styled text with markdown-like formatting
+  Widget _buildStyledText(String text, TextStyle baseStyle) {
+    final parts = <TextSpan>[];
+    final regex = RegExp(r'\*\*(.*?)\*\*|\*(.*?)\*|_(.*?)_');
+    int lastMatchEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      // Add text before the match
+      if (match.start > lastMatchEnd) {
+        parts.add(
+          TextSpan(
+            text: text.substring(lastMatchEnd, match.start),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      // Add styled text
+      if (match.group(1) != null) {
+        // Bold text (**text**)
+        parts.add(
+          TextSpan(
+            text: match.group(1),
+            style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+          ),
+        );
+      } else if (match.group(2) != null) {
+        // Italic text (*text*)
+        parts.add(
+          TextSpan(
+            text: match.group(2),
+            style: baseStyle.copyWith(fontStyle: FontStyle.italic),
+          ),
+        );
+      } else if (match.group(3) != null) {
+        // Underlined text (_text_)
+        parts.add(
+          TextSpan(
+            text: match.group(3),
+            style: baseStyle.copyWith(
+              fontStyle: FontStyle.italic,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        );
+      }
+
+      lastMatchEnd = match.end;
+    }
+
+    // Add remaining text
+    if (lastMatchEnd < text.length) {
+      parts.add(TextSpan(text: text.substring(lastMatchEnd), style: baseStyle));
+    }
+
+    return RichText(text: TextSpan(children: parts));
   }
 
   void _sendMessage() {
@@ -587,7 +657,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                 ),
               ),
               const SizedBox(width: 12),
-              const Text('✨ Sending enhanced AI request...'),
+              const Text('✨ *Sending enhanced AI request...*'),
             ],
           ),
           backgroundColor: AppTheme.primaryColor,
@@ -746,16 +816,18 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '🚀 Enhanced AI Prompt Activated!',
-                      style: TextStyle(
+                    _buildStyledText(
+                      '🚀 **Enhanced AI Prompt** Activated!',
+                      const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
+                        color: Colors.white,
                       ),
                     ),
-                    Text(
-                      'Your messages will now use advanced prompting for better AI responses',
-                      style: TextStyle(
+                    const SizedBox(height: 4),
+                    _buildStyledText(
+                      '_Your messages will now use **advanced prompting** for better AI responses_',
+                      TextStyle(
                         fontSize: 12,
                         color: Colors.white.withOpacity(0.9),
                       ),
