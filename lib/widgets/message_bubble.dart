@@ -52,172 +52,183 @@ class MessageBubble extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18).copyWith(
                       bottomLeft: isUser ? null : const Radius.circular(4),
                       bottomRight: isUser ? const Radius.circular(4) : null,
-                ),
-                border: isError
-                    ? Border.all(color: AppTheme.errorColor, width: 1)
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Images if present
-                  if (message.imagePaths.isNotEmpty) ...[
-                    ImagePreviewWidget(imagePaths: message.imagePaths),
-                    const SizedBox(height: 8),
-                  ],
-
-                  // Message content with enhanced loading animation
-                  if (isSending)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 150,
-                          child: AnimatedTextKit(
-                            animatedTexts: [
-                              TypewriterAnimatedText(
-                                message.content.isNotEmpty
-                                    ? message.content
-                                    : 'Thinking...',
-                                textStyle: TextStyle(
-                                  color: isUser
-                                      ? Colors.white
-                                      : AppTheme.onSurfaceColor,
-                                  fontSize: 16,
-                                ),
-                                speed: const Duration(milliseconds: 80),
-                              ),
-                            ],
-                            repeatForever: true,
-                            pause: const Duration(milliseconds: 1000),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              themeService.primaryColor.withOpacity(0.7),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    SelectableText(
-                      message.content,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : AppTheme.onSurfaceColor,
-                        fontSize: 16,
-                      ),
                     ),
-
-                  const SizedBox(height: 4),
-
-                  // Message metadata with enhanced contextual indicators
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                    border: isError
+                        ? Border.all(color: AppTheme.errorColor, width: 1)
+                        : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        DateFormat('HH:mm').format(message.timestamp),
-                        style: TextStyle(
-                          color:
-                              (isUser ? Colors.white : AppTheme.onSurfaceColor)
-                                  .withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-
-                      // Show context indicator for AI responses that reference previous conversation
-                      if (!isUser &&
-                          _isContextualResponse(message.content)) ...[
-                        const SizedBox(width: 6),
-                        Tooltip(
-                          message: 'Response uses conversation context',
-                          child: Icon(
-                            Icons.chat_bubble_outline,
-                            size: 12,
-                            color: themeService.primaryColor.withOpacity(0.7),
-                          ),
-                        ),
+                      // Images if present
+                      if (message.imagePaths.isNotEmpty) ...[
+                        ImagePreviewWidget(imagePaths: message.imagePaths),
+                        const SizedBox(height: 8),
                       ],
 
-                      if (!isUser && message.aiModel != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: themeService.primaryColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            message.aiModel!.split(' ').first,
-                            style: TextStyle(
-                              color: themeService.primaryColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (message.confidence != null &&
-                          message.confidence! > 0) ...[
-                        const SizedBox(width: 4),
-                        Tooltip(
-                          message:
-                              'Confidence: ${(message.confidence! * 100).toStringAsFixed(0)}%',
-                          child: Icon(
-                            Icons.verified,
-                            size: 12,
-                            color: _getConfidenceColor(message.confidence!, themeService),
-                          ),
-                        ),
-                      ],
-                      if (isError) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: onRetry,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.errorColor,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Retry',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
+                      // Message content with enhanced loading animation
+                      if (isSending)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 150,
+                              child: AnimatedTextKit(
+                                animatedTexts: [
+                                  TypewriterAnimatedText(
+                                    message.content.isNotEmpty
+                                        ? message.content
+                                        : 'Thinking...',
+                                    textStyle: TextStyle(
+                                      color: isUser
+                                          ? Colors.white
+                                          : AppTheme.onSurfaceColor,
+                                      fontSize: 16,
+                                    ),
+                                    speed: const Duration(milliseconds: 80),
+                                  ),
+                                ],
+                                repeatForever: true,
+                                pause: const Duration(milliseconds: 1000),
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  themeService.primaryColor.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        SelectableText(
+                          message.content,
+                          style: TextStyle(
+                            color: isUser
+                                ? Colors.white
+                                : AppTheme.onSurfaceColor,
+                            fontSize: 16,
                           ),
                         ),
-                      ],
+
+                      const SizedBox(height: 4),
+
+                      // Message metadata with enhanced contextual indicators
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            DateFormat('HH:mm').format(message.timestamp),
+                            style: TextStyle(
+                              color:
+                                  (isUser
+                                          ? Colors.white
+                                          : AppTheme.onSurfaceColor)
+                                      .withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+
+                          // Show context indicator for AI responses that reference previous conversation
+                          if (!isUser &&
+                              _isContextualResponse(message.content)) ...[
+                            const SizedBox(width: 6),
+                            Tooltip(
+                              message: 'Response uses conversation context',
+                              child: Icon(
+                                Icons.chat_bubble_outline,
+                                size: 12,
+                                color: themeService.primaryColor.withOpacity(
+                                  0.7,
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          if (!isUser && message.aiModel != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: themeService.primaryColor.withOpacity(
+                                  0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                message.aiModel!.split(' ').first,
+                                style: TextStyle(
+                                  color: themeService.primaryColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (message.confidence != null &&
+                              message.confidence! > 0) ...[
+                            const SizedBox(width: 4),
+                            Tooltip(
+                              message:
+                                  'Confidence: ${(message.confidence! * 100).toStringAsFixed(0)}%',
+                              child: Icon(
+                                Icons.verified,
+                                size: 12,
+                                color: _getConfidenceColor(
+                                  message.confidence!,
+                                  themeService,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (isError) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: onRetry,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.errorColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Retry',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+              if (isUser) ...[
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: themeService.primaryColor,
+                  child: Icon(Icons.person, size: 18, color: Colors.white),
+                ),
+              ],
+            ],
           ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: themeService.primaryColor,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ],
-        ],
-      ),
         );
       },
     );

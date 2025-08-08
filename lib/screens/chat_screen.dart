@@ -94,7 +94,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: themeService.primaryColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.smart_toy,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Text(
@@ -195,9 +199,9 @@ class _ChatScreenState extends State<ChatScreen> {
               const SizedBox(height: 24),
               Text(
                 'Welcome to ImageQuery AI',
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Padding(
@@ -287,9 +291,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showSettings() {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider.value(
+          value: chatProvider,
+          child: const SettingsScreen(),
+        ),
+      ),
     );
   }
 

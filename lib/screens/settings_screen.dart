@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/config_service.dart';
 import '../services/theme_service.dart';
+import '../services/export_service.dart';
 import '../theme/app_theme.dart';
 import '../providers/chat_provider.dart';
 
@@ -641,7 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Divider(),
         _buildActionTile(
           title: 'Export Chat Data',
-          subtitle: 'Export your chats as JSON file',
+          subtitle: 'Export your chats in JSON, CSV, or text format',
           icon: Icons.download,
           onTap: _exportChatData,
         ),
@@ -930,8 +931,125 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _exportChatData() {
-    _showSnackBar('Export feature coming soon');
+  void _exportChatData() async {
+    try {
+      // Get export statistics
+      final stats = await ExportService.getExportStatistics();
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Export Chat Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Export Statistics:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text('• Chat Sessions: ${stats['total_sessions']}'),
+              Text('• Total Messages: ${stats['total_messages']}'),
+              Text('• User Messages: ${stats['user_messages']}'),
+              Text('• AI Messages: ${stats['ai_messages']}'),
+              Text('• Images: ${stats['total_images']}'),
+              const SizedBox(height: 16),
+              const Text(
+                'Choose export format:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text('• JSON: Complete data with structure'),
+              const Text('• CSV: Spreadsheet-compatible format'),
+              const Text('• Text: Human-readable format'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performExport('json');
+              },
+              child: const Text('JSON'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performExport('csv');
+              },
+              child: const Text('CSV'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performExport('text');
+              },
+              child: const Text('Text'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _showSnackBar('Failed to load export statistics: $e');
+    }
+  }
+
+  Future<void> _performExport(String format) async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text('Exporting chat data as ${format.toUpperCase()}...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      bool success = false;
+
+      switch (format.toLowerCase()) {
+        case 'json':
+          success = await ExportService.exportChatDataAsJson();
+          break;
+        case 'csv':
+          success = await ExportService.exportChatDataAsCsv();
+          break;
+        case 'text':
+          success = await ExportService.exportChatDataAsText();
+          break;
+        default:
+          throw Exception('Unknown export format: $format');
+      }
+
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (success) {
+        _showSnackBar(
+          'Chat data exported successfully as ${format.toUpperCase()}',
+        );
+      } else {
+        _showSnackBar('Export failed');
+      }
+    } catch (e) {
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Export failed: $e');
+    }
   }
 
   void _clearCache() {
