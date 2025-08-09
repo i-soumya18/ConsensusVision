@@ -49,7 +49,7 @@ class TextExtractionService {
 
       final response = await http.post(
         Uri.parse(
-          '${geminiBaseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey',
+          '${geminiBaseUrl}gemini-2.5-flash:generateContent?key=$apiKey',
         ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),

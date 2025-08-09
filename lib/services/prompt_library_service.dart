@@ -175,6 +175,138 @@ class PromptLibraryService {
       tags: ['email', 'professional', 'business'],
     ),
 
+    // Advanced Analysis & Strategy
+    Prompt(
+      id: 'advanced_1',
+      title: 'Chain-of-Thought Analysis',
+      content:
+          'Analyze the following using systematic reasoning: {input}\n\n'
+          'Please structure your response as follows:\n'
+          '1. **Problem Analysis**: Break down the core components\n'
+          '2. **Available Options**: Identify possible approaches or solutions\n'
+          '3. **Evaluation Criteria**: Define what makes a good solution\n'
+          '4. **Recommended Solution**: Provide your conclusion with detailed rationale\n'
+          '5. **Implementation Steps**: Outline actionable next steps',
+      category: 'General',
+      description: 'Systematic problem-solving with structured reasoning',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['analysis', 'reasoning', 'systematic', 'strategy'],
+    ),
+
+    Prompt(
+      id: 'advanced_2',
+      title: 'Multi-Perspective Evaluator',
+      content:
+          'Examine the following topic from multiple expert perspectives: {input}\n\n'
+          'Provide insights from at least 3 different expert viewpoints (e.g., technical, business, user experience, ethical, etc.)\n'
+          'For each perspective:\n'
+          '- **Role**: [Expert type]\n'
+          '- **Key Concerns**: What this expert would focus on\n'
+          '- **Recommendations**: Specific advice from this viewpoint\n'
+          '- **Potential Risks**: Concerns this expert would raise\n\n'
+          'Conclude with a synthesis that balances all perspectives.',
+      category: 'General',
+      description: 'Multi-expert analysis for comprehensive understanding',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['perspective', 'expert', 'comprehensive', 'analysis'],
+    ),
+
+    Prompt(
+      id: 'advanced_3',
+      title: 'Context-Aware Explainer',
+      content:
+          'Explain the following topic with adaptive detail: {input}\n\n'
+          'Please provide explanation at three levels:\n'
+          '1. **Quick Overview** (1-2 sentences): The essential concept\n'
+          '2. **Standard Explanation** (1-2 paragraphs): Moderate detail with examples\n'
+          '3. **Deep Dive** (3+ paragraphs): Comprehensive coverage with context, implications, and connections\n\n'
+          'Include practical applications and common misconceptions if relevant.',
+      category: 'Education',
+      description: 'Adaptive explanations with multiple depth levels',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['explanation', 'adaptive', 'layered', 'comprehensive'],
+    ),
+
+    // Safety-First Templates
+    Prompt(
+      id: 'safety_1',
+      title: 'Risk Assessment Framework',
+      content:
+          'Conduct a comprehensive risk assessment for: {input}\n\n'
+          'Structure your analysis as follows:\n'
+          '**1. Risk Identification**\n'
+          '- Potential risks and their likelihood\n'
+          '- Impact severity (Low/Medium/High)\n\n'
+          '**2. Mitigation Strategies**\n'
+          '- Preventive measures\n'
+          '- Contingency plans\n\n'
+          '**3. Safety Recommendations**\n'
+          '- Best practices to follow\n'
+          '- Warning signs to monitor\n\n'
+          '**4. Decision Framework**\n'
+          '- Go/No-go criteria\n'
+          '- When to seek additional expertise',
+      category: 'Business',
+      description: 'Comprehensive risk analysis with safety focus',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['risk', 'safety', 'assessment', 'framework'],
+    ),
+
+    // Creative Problem-Solving
+    Prompt(
+      id: 'creative_1',
+      title: 'Innovation Workshop',
+      content:
+          'Lead a creative brainstorming session for: {input}\n\n'
+          '**Phase 1: Divergent Thinking**\n'
+          '- Generate 5-7 wildly different approaches\n'
+          '- Include both conventional and unconventional ideas\n'
+          '- No judgment, focus on quantity and creativity\n\n'
+          '**Phase 2: Idea Development**\n'
+          '- Expand on the 3 most promising concepts\n'
+          '- Identify required resources and potential obstacles\n\n'
+          '**Phase 3: Implementation Strategy**\n'
+          '- Create action plans for the top idea\n'
+          '- Include timeline, milestones, and success metrics\n\n'
+          'End with specific next steps to move forward.',
+      category: 'Creative',
+      description: 'Structured creative problem-solving workshop',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['innovation', 'brainstorming', 'creative', 'workshop'],
+    ),
+
+    // Advanced Image Analysis
+    Prompt(
+      id: 'image_advanced_1',
+      title: 'Professional Image Analyst',
+      content:
+          'Conduct a comprehensive professional analysis of the provided image(s): {input}\n\n'
+          'Structure your analysis as follows:\n\n'
+          '**1. Visual Elements Analysis**\n'
+          '- Composition, lighting, colors, and visual hierarchy\n'
+          '- Technical quality and notable features\n\n'
+          '**2. Content Interpretation**\n'
+          '- Objects, people, text, and activities visible\n'
+          '- Context clues and environmental details\n\n'
+          '**3. Purpose & Context Assessment**\n'
+          '- Likely purpose or use case of the image\n'
+          '- Target audience or intended message\n\n'
+          '**4. Actionable Insights**\n'
+          '- Key information extracted\n'
+          '- Recommendations based on the analysis\n'
+          '- Follow-up questions for clarification if needed',
+      category: 'Image Analysis',
+      description: 'Professional-grade image analysis with structured insights',
+      isDefault: true,
+      createdAt: DateTime.now(),
+      tags: ['image', 'professional', 'analysis', 'comprehensive'],
+    ),
+
     // Education
     Prompt(
       id: 'education_1',

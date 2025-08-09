@@ -6,6 +6,7 @@ import '../models/chat_session.dart';
 import '../services/database_service.dart';
 import '../services/ai_evaluation_service.dart';
 import '../services/prompt_library_service.dart';
+import '../services/context_management_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AIEvaluationService _aiEvaluationService;
@@ -183,7 +184,7 @@ class ChatProvider extends ChangeNotifier {
       }
 
       // Enhance the query with contextual information for better continuity
-      finalContent = _enhanceQueryWithContext(finalContent);
+      finalContent = _enhanceQueryWithAdvancedContext(finalContent);
 
       // Create user message
       final userMessage = Message(
@@ -216,8 +217,8 @@ class ChatProvider extends ChangeNotifier {
       _currentMessages.add(aiMessage);
       notifyListeners();
 
-      // Build enhanced conversation history for context
-      final conversationHistory = _buildConversationHistory();
+      // Build enhanced conversation history using advanced context management
+      final conversationHistory = _buildAdvancedConversationHistory();
 
       // Process query with AI evaluation and enhanced conversation context
       final evaluationResult = await _aiEvaluationService
@@ -253,9 +254,13 @@ class ChatProvider extends ChangeNotifier {
         await renameChatSession(_currentSession!.id, title);
       }
     } catch (e) {
-      _setError('Failed to send message: $e');
+      _handleErrorWithContext(
+        'Failed to send message: $e',
+        context: 'Message Processing',
+        recovery: 'Try rephrasing your question or check your connection',
+      );
 
-      // Update AI message to show error
+      // Update AI message to show error with helpful suggestions
       final errorMessage = _currentMessages.lastWhere(
         (m) => m.type == MessageType.ai && m.status == MessageStatus.sending,
         orElse: () => Message(
@@ -270,8 +275,25 @@ class ChatProvider extends ChangeNotifier {
 
       final errorIndex = _currentMessages.indexOf(errorMessage);
       if (errorIndex != -1) {
+        String errorContent =
+            'I encountered an issue processing your request. ';
+
+        // Add specific error guidance based on the error type
+        if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorContent +=
+              'It seems like there\'s a connection issue. Please check your internet connection and try again.';
+        } else if (e.toString().contains('API') ||
+            e.toString().contains('rate')) {
+          errorContent +=
+              'There was an API issue. You might want to wait a moment and try again.';
+        } else {
+          errorContent +=
+              'Please try rephrasing your question or contact support if the issue persists.';
+        }
+
         _currentMessages[errorIndex] = errorMessage.copyWith(
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: errorContent,
           status: MessageStatus.error,
         );
       }
@@ -281,8 +303,8 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // Build conversation history for context with enhanced contextual awareness
-  List<Map<String, dynamic>> _buildConversationHistory() {
+  // Build conversation history using advanced context management
+  List<Map<String, dynamic>> _buildAdvancedConversationHistory() {
     final history = <Map<String, dynamic>>[];
 
     // Get all completed messages, excluding the current AI message being generated
@@ -295,9 +317,27 @@ class ChatProvider extends ChangeNotifier {
         )
         .toList();
 
-    // Enhanced context management based on conversation length
-    final contextMessages = _getContextualMessages(messagesToInclude);
+    // Use advanced context management for optimal message selection
+    final contextMessages = ContextManagementService.getOptimalContextMessages(
+      messagesToInclude,
+    );
 
+    // Add conversation summary for very long conversations
+    if (_currentMessages.length > 30) {
+      final summary = ContextManagementService.generateIntelligentSummary(
+        messagesToInclude,
+      );
+      if (summary.isNotEmpty) {
+        history.insert(0, {
+          'role': 'system',
+          'content': [
+            {'type': 'text', 'text': summary},
+          ],
+        });
+      }
+    }
+
+    // Build history from context messages
     for (final message in contextMessages) {
       final role = message.type == MessageType.user ? 'user' : 'assistant';
 
@@ -317,6 +357,14 @@ class ChatProvider extends ChangeNotifier {
         }
 
         history.add({'role': role, 'content': content});
+      } else if (message.id.startsWith('context-bridge')) {
+        // Handle context bridge messages
+        history.add({
+          'role': 'system',
+          'content': [
+            {'type': 'text', 'text': message.content},
+          ],
+        });
       } else {
         // For text-only messages, add enhanced context markers
         String enhancedContent = message.content;
@@ -336,97 +384,52 @@ class ChatProvider extends ChangeNotifier {
       }
     }
 
-    // Add conversation summary if the conversation is long
-    if (_currentMessages.length > 30) {
-      final summary = _generateConversationSummary(messagesToInclude);
-      if (summary.isNotEmpty) {
-        history.insert(0, {
-          'role': 'system',
-          'content': [
-            {'type': 'text', 'text': 'Conversation Summary: $summary'},
-          ],
-        });
-      }
-    }
-
     return history;
   }
 
-  // Get contextually relevant messages with smart trimming
-  List<Message> _getContextualMessages(List<Message> allMessages) {
-    if (allMessages.length <= 20) {
-      return allMessages;
+  // Enhanced query processing with advanced context and error handling
+  String _enhanceQueryWithAdvancedContext(String query) {
+    if (_currentMessages.isEmpty) {
+      return query;
     }
 
-    // For longer conversations, use smart context selection
-    final recentMessages = allMessages.sublist(allMessages.length - 16);
-
-    // Include important early messages that might contain key context
-    final earlyImportantMessages = <Message>[];
-    for (final message in allMessages.take(4)) {
-      // Include messages with images or questions that set context
-      if (message.imagePaths.isNotEmpty ||
-          message.content.contains('?') ||
-          message.content.length > 100) {
-        earlyImportantMessages.add(message);
-      }
+    // Early return for empty or very short queries
+    if (query.trim().length < 3) {
+      return query;
     }
 
-    // Combine early important messages with recent messages
-    final contextualMessages = <Message>[];
-    contextualMessages.addAll(earlyImportantMessages);
-
-    // Add separator message if we're bridging context
-    if (earlyImportantMessages.isNotEmpty &&
-        allMessages.length - recentMessages.length >
-            earlyImportantMessages.length) {
-      contextualMessages.add(
-        Message(
-          id: 'context-bridge',
-          content: '[... conversation continued ...]',
-          imagePaths: [],
-          timestamp: DateTime.now(),
-          type: MessageType.ai,
-          status: MessageStatus.delivered,
-        ),
-      );
+    // Check for ambiguous or incomplete queries that need clarification
+    if (_isAmbiguousQuery(query)) {
+      return _addClarificationContext(query);
     }
 
-    contextualMessages.addAll(recentMessages);
-    return contextualMessages;
-  }
+    // Use advanced context management for query enhancement
+    final contextMessages = ContextManagementService.getOptimalContextMessages(
+      _currentMessages,
+    );
 
-  // Generate a conversation summary for very long conversations
-  String _generateConversationSummary(List<Message> messages) {
-    if (messages.length < 20) return '';
+    // Detect topic transitions for better context handling
+    final topicTransition = ContextManagementService.detectTopicTransition(
+      contextMessages
+          .where((m) => m.type == MessageType.user || m.type == MessageType.ai)
+          .toList(),
+      query,
+    );
 
-    final topics = <String>[];
-    final imageCount = messages.where((m) => m.imagePaths.isNotEmpty).length;
-
-    // Analyze key topics discussed
-    final userMessages = messages
-        .where((m) => m.type == MessageType.user)
-        .toList();
-    for (final message in userMessages.take(10)) {
-      if (message.content.length > 50) {
-        final words = message.content.split(' ').take(5).join(' ');
-        topics.add(words);
-      }
+    // Add topic transition context if needed
+    String enhancedQuery = query;
+    if (topicTransition == TopicTransition.related) {
+      enhancedQuery = '[Topic shift detected] $query';
+    } else if (topicTransition == TopicTransition.newTopic) {
+      enhancedQuery = '[New topic] $query';
     }
 
-    String summary = 'This conversation ';
-    if (imageCount > 0) {
-      summary += 'included analysis of $imageCount image(s) and ';
-    }
-
-    if (topics.isNotEmpty) {
-      summary += 'covered topics including: ${topics.take(3).join(', ')}.';
-    } else {
-      summary +=
-          'involved multiple exchanges about image analysis and queries.';
-    }
-
-    return summary;
+    // Apply advanced context enhancement
+    return ContextManagementService.enhanceQueryWithContext(
+      enhancedQuery,
+      contextMessages,
+      includeImageContext: true,
+    );
   }
 
   Future<void> retryLastMessage() async {
@@ -470,59 +473,88 @@ class ChatProvider extends ChangeNotifier {
     return words.length > 30 ? '${words.substring(0, 30)}...' : words;
   }
 
-  // Enhance query with contextual information for better continuity
-  String _enhanceQueryWithContext(String query) {
-    if (_currentMessages.isEmpty) {
-      return query;
-    }
+  // Check if a query is ambiguous and might need clarification
+  bool _isAmbiguousQuery(String query) {
+    final ambiguousPatterns = [
+      // Very vague queries
+      RegExp(
+        r'^(what|how|why|when|where)\s*(is|are|do|does|can|should)?\s*it\??$',
+      ),
+      RegExp(r'^(this|that|these|those)\??$'),
+      RegExp(r'^(help|fix|solve|explain)\s*(this|that|it)?\??$'),
 
-    // Check if this is a follow-up question
-    final followUpIndicators = [
-      'what about',
-      'and this',
-      'also',
-      'what if',
-      'how about',
-      'can you also',
+      // Single word queries (except proper nouns)
+      RegExp(r'^\w+\??$'),
+
+      // Questions without sufficient context
+      RegExp(r'^(what|how)\s+(do|can|should)\s+i\s*\??$'),
     ];
-    final isFollowUp = followUpIndicators.any(
-      (indicator) => query.toLowerCase().contains(indicator),
-    );
 
-    // Check if query references previous context
-    final contextualReferences = [
-      'it',
-      'this',
-      'that',
-      'they',
-      'them',
-      'these',
-      'those',
-    ];
-    final hasContextualReference = contextualReferences.any(
-      (ref) => query.toLowerCase().split(' ').contains(ref),
-    );
+    final queryTrimmed = query.trim().toLowerCase();
+    return ambiguousPatterns.any((pattern) => pattern.hasMatch(queryTrimmed));
+  }
 
-    // Get recent context for reference
+  // Add clarification context to ambiguous queries
+  String _addClarificationContext(String query) {
     final recentMessages = _currentMessages
-        .where(
-          (m) => m.type == MessageType.user && m != _currentMessages.lastOrNull,
-        )
-        .take(3);
+        .where((m) => m.type == MessageType.user)
+        .take(2)
+        .toList();
 
-    if ((isFollowUp || hasContextualReference) && recentMessages.isNotEmpty) {
-      final lastUserMessage = recentMessages.first;
-      String contextualPrompt = query;
-
-      if (hasContextualReference && !query.toLowerCase().contains('image')) {
-        contextualPrompt =
-            'Referring to our previous discussion about "${lastUserMessage.content.split(' ').take(10).join(' ')}", $query';
-      }
-
-      return contextualPrompt;
+    if (recentMessages.isNotEmpty) {
+      final lastContext = recentMessages.first.content
+          .split(' ')
+          .take(8)
+          .join(' ');
+      return 'Regarding our discussion about "$lastContext": $query. '
+          'Please provide a specific and detailed response. If my question is unclear, '
+          'please ask for clarification about what specific aspect you\'d like me to address.';
     }
 
-    return query;
+    return '$query\n\nNote: Your question seems quite general. Please provide more specific details '
+        'about what you\'d like to know, or ask me to clarify if you need help formulating your question.';
+  }
+
+  // Enhanced error handling with recovery suggestions
+  void _handleErrorWithContext(
+    String error, {
+    String? context,
+    String? recovery,
+  }) {
+    String enhancedError = error;
+
+    // Add context if available
+    if (context != null) {
+      enhancedError = '$context: $error';
+    }
+
+    // Add recovery suggestions based on error type
+    if (error.contains('network') || error.contains('connection')) {
+      enhancedError +=
+          '\n\nSuggestions:\n'
+          '• Check your internet connection\n'
+          '• Verify your API keys are valid\n'
+          '• Try again in a few moments';
+    } else if (error.contains('API') || error.contains('rate limit')) {
+      enhancedError +=
+          '\n\nSuggestions:\n'
+          '• Wait a moment before trying again\n'
+          '• Check if your API quota is exceeded\n'
+          '• Consider using different model settings';
+    } else if (error.contains('image') || error.contains('file')) {
+      enhancedError +=
+          '\n\nSuggestions:\n'
+          '• Ensure image file is not corrupted\n'
+          '• Try with a different image format\n'
+          '• Check file size limitations';
+    }
+
+    // Add custom recovery action if provided
+    if (recovery != null) {
+      enhancedError += '\n\nRecommended action: $recovery';
+    }
+
+    _setError(enhancedError);
   }
 
   // Get contextual loading message based on conversation state

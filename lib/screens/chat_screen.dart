@@ -4,10 +4,12 @@ import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../widgets/conversation_context_indicator.dart';
+import '../widgets/context_visualization_widget.dart';
 import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import 'chat_sessions_screen.dart';
 import 'settings_screen.dart';
+import 'context_management_demo_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,6 +20,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _showContextVisualization = false;
 
   @override
   void initState() {
@@ -54,8 +57,30 @@ class _ChatScreenState extends State<ChatScreen> {
                             isVisible: chatProvider.currentMessages.length > 2,
                           ),
 
+                          // Context visualization debug panel
+                          if (_showContextVisualization &&
+                              chatProvider.currentMessages.isNotEmpty)
+                            Expanded(
+                              flex: 1,
+                              child: SingleChildScrollView(
+                                child: ContextVisualizationWidget(
+                                  allMessages: chatProvider.currentMessages,
+                                  currentQuery:
+                                      chatProvider.currentMessages.isNotEmpty
+                                      ? chatProvider
+                                            .currentMessages
+                                            .last
+                                            .content
+                                      : '',
+                                ),
+                              ),
+                            ),
+
                           // Messages list
-                          Expanded(child: _buildMessagesList(chatProvider)),
+                          Expanded(
+                            flex: _showContextVisualization ? 2 : 1,
+                            child: _buildMessagesList(chatProvider),
+                          ),
                         ],
                       ),
               ),
@@ -108,6 +133,26 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
             actions: [
+              // Debug Context Button (only in development)
+              IconButton(
+                icon: Icon(
+                  _showContextVisualization
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  color: _showContextVisualization
+                      ? AppTheme.primaryColor
+                      : null,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _showContextVisualization = !_showContextVisualization;
+                  });
+                },
+                tooltip: _showContextVisualization
+                    ? 'Hide Context Analysis'
+                    : 'Show Context Analysis',
+                iconSize: 24.0,
+              ),
               // New Chat Button
               IconButton(
                 icon: const Icon(Icons.add_comment),
@@ -127,6 +172,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 onSelected: _handleMenuAction,
                 iconSize: 24.0,
                 itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'context_demo',
+                    child: Row(
+                      children: [
+                        Icon(Icons.psychology),
+                        SizedBox(width: 12),
+                        Text('Context Demo'),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: 'settings',
                     child: Row(
@@ -279,6 +334,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _handleMenuAction(String action) {
     switch (action) {
+      case 'context_demo':
+        _showContextDemo();
+        break;
       case 'settings':
         _showSettings();
         break;
@@ -288,6 +346,15 @@ class _ChatScreenState extends State<ChatScreen> {
   void _createNewChat() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     chatProvider.createNewChatSession();
+  }
+
+  void _showContextDemo() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ContextManagementDemoScreen(),
+      ),
+    );
   }
 
   void _showSettings() {

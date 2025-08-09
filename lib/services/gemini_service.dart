@@ -19,7 +19,7 @@ class GeminiService implements AIService {
   Future<bool> isAvailable() async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey'),
+        Uri.parse('${baseUrl}gemini-2.5-flash:generateContent?key=$apiKey'),
         headers: {'Content-Type': 'application/json'},
       );
       return response.statusCode == 200 ||
@@ -99,7 +99,7 @@ class GeminiService implements AIService {
       };
 
       final response = await http.post(
-        Uri.parse('${baseUrl}gemini-2.0-flash-exp:generateContent?key=$apiKey'),
+        Uri.parse('${baseUrl}gemini-2.5-flash:generateContent?key=$apiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );

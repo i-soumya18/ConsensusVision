@@ -1,5 +1,6 @@
 import '../services/ai_service.dart';
 import '../services/gemini_service.dart';
+import '../services/gemini_pro_service.dart';
 import '../services/huggingface_service.dart';
 
 class ModelInfo {
@@ -38,7 +39,14 @@ class ModelRegistryService {
       id: 'Gemini-2.0-Flash',
       displayName: 'Google Gemini 2.0 Flash',
       description: 'Fast and efficient multimodal model from Google',
-      serviceFactory: _geminiFactory,
+      serviceFactory: _geminiFlashFactory,
+      requiresGeminiKey: true,
+    ),
+    ModelInfo(
+      id: 'Gemini-2.0-Pro',
+      displayName: 'Google Gemini 2.0 Pro',
+      description: 'Advanced reasoning model from Google for complex tasks',
+      serviceFactory: _geminiProFactory,
       requiresGeminiKey: true,
     ),
     ModelInfo(
@@ -69,8 +77,12 @@ class ModelRegistryService {
     throw UnimplementedError('Auto-select does not create a specific service');
   }
 
-  static AIService _geminiFactory(String apiKey) {
+  static AIService _geminiFlashFactory(String apiKey) {
     return GeminiService(apiKey: apiKey);
+  }
+
+  static AIService _geminiProFactory(String apiKey) {
+    return GeminiProService(apiKey: apiKey);
   }
 
   static AIService _huggingFaceDialogFactory(String apiKey) {

@@ -4,6 +4,7 @@ import '../services/config_service.dart';
 import '../services/model_registry_service.dart';
 import 'ai_service.dart';
 import 'gemini_service.dart';
+import 'gemini_pro_service.dart';
 import 'huggingface_service.dart';
 import 'text_extraction_service.dart';
 
@@ -18,6 +19,7 @@ class AIEvaluationService {
   }) : _geminiApiKey = geminiApiKey,
        _huggingFaceApiKey = huggingFaceApiKey {
     _aiServices.add(GeminiService(apiKey: geminiApiKey));
+    _aiServices.add(GeminiProService(apiKey: geminiApiKey));
     _aiServices.add(HuggingFaceService(apiKey: huggingFaceApiKey));
   }
 

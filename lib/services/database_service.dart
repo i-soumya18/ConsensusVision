@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/message.dart';
 import '../models/chat_session.dart';
 
@@ -33,9 +34,19 @@ class DatabaseService {
   }
 
   static Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), _databaseName);
+    // For MSIX compatibility, use application documents directory
+    String dbPath;
+    if (Platform.isWindows) {
+      // Use application documents directory for MSIX compatibility
+      final appDir = await getApplicationDocumentsDirectory();
+      dbPath = join(appDir.path, _databaseName);
+    } else {
+      // Use default databases path for other platforms
+      dbPath = join(await getDatabasesPath(), _databaseName);
+    }
+
     return await openDatabase(
-      path,
+      dbPath,
       version: _databaseVersion,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
