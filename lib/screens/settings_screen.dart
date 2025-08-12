@@ -94,8 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildSystemPromptSection(),
                 const SizedBox(height: 24),
-                _buildConversationSection(),
-                const SizedBox(height: 24),
                 _buildThemeSection(),
                 const SizedBox(height: 24),
                 _buildDataManagementSection(),
@@ -104,7 +102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildHelpSection(),
                 const SizedBox(height: 24),
-                _buildDeveloperSection(),
               ],
             ),
     );
@@ -1028,41 +1025,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Widget _buildConversationSection() {
-    return _buildSectionCard(
-      title: 'Conversation Settings',
-      icon: Icons.chat,
-      children: [
-        _buildInfoTile(
-          title: 'Continuous Context',
-          subtitle:
-              'AI maintains conversation context across multiple exchanges',
-          icon: Icons.chat_bubble_outline,
-          enabled: true,
-        ),
-        const Divider(),
-        _buildInfoTile(
-          title: 'Context Window',
-          subtitle: 'Last 20 messages are remembered for contextual responses',
-          icon: Icons.memory,
-        ),
-        const Divider(),
-        _buildInfoTile(
-          title: 'Smart Context',
-          subtitle: 'Important early messages preserved in long conversations',
-          icon: Icons.psychology,
-        ),
-        const Divider(),
-        _buildInfoTile(
-          title: 'Image Memory',
-          subtitle:
-              'Previously shared images referenced in ongoing discussions',
-          icon: Icons.image,
-        ),
-      ],
-    );
-  }
-
   Widget _buildDataManagementSection() {
     return _buildSectionCard(
       title: 'Data Management',
@@ -1142,28 +1104,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDeveloperSection() {
-    return _buildSectionCard(
-      title: 'Developer',
-      icon: Icons.code,
-      children: [
-        _buildActionTile(
-          title: 'Developer Notes',
-          subtitle: 'Technical information and changelog',
-          icon: Icons.notes,
-          onTap: _showDeveloperNotes,
-        ),
-        const Divider(),
-        _buildActionTile(
-          title: 'Debug Information',
-          subtitle: 'View app debug information',
-          icon: Icons.bug_report,
-          onTap: _showDebugInfo,
-        ),
-      ],
-    );
-  }
-
   Widget _buildActionTile({
     required String title,
     required String subtitle,
@@ -1186,31 +1126,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
-    );
-  }
-
-  Widget _buildInfoTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    bool enabled = false,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: enabled
-            ? AppTheme.primaryColor
-            : AppTheme.onSurfaceColor.withOpacity(0.6),
-      ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle),
-      trailing: enabled
-          ? Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20)
-          : Icon(
-              Icons.info_outline,
-              color: AppTheme.onSurfaceColor.withOpacity(0.5),
-              size: 20,
-            ),
     );
   }
 
@@ -1532,20 +1447,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showSnackBar('Redirecting to issue tracker...');
   }
 
-  void _showDeveloperNotes() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const DeveloperNotesScreen()),
-    );
-  }
-
-  void _showDebugInfo() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const DebugInfoScreen()),
-    );
-  }
-
   void _showSnackBar(String message) {
     if (mounted) {
       ScaffoldMessenger.of(
@@ -1564,7 +1465,7 @@ class HowToUseScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('How to Use'),
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -1640,7 +1541,7 @@ class FAQScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('FAQ'),
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -1686,179 +1587,6 @@ class FAQScreen extends StatelessWidget {
         children: [
           Padding(padding: const EdgeInsets.all(16), child: Text(answer)),
         ],
-      ),
-    );
-  }
-}
-
-class DeveloperNotesScreen extends StatelessWidget {
-  const DeveloperNotesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Developer Notes'),
-        backgroundColor: AppTheme.surfaceColor,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildNoteCard(context, 'Version 1.0.0 - January 2025', [
-            '• Initial release with Gemini and HuggingFace integration',
-            '• Multi-modal chat support (text + images)',
-            '• Prompt library with customizable templates',
-            '• Cross-platform support (Android, Windows, Web)',
-            '• Local chat history with SQLite storage',
-          ]),
-          _buildNoteCard(context, 'Technical Architecture', [
-            '• Flutter 3.32.1 with Provider state management',
-            '• RESTful API integration with http package',
-            '• Local database using sqflite',
-            '• Material Design 3 UI components',
-            '• Cross-platform file system access',
-          ]),
-          _buildNoteCard(context, 'AI Model Integration', [
-            '• Google Gemini 2.5 Flash for vision and text',
-            '• HuggingFace Inference API for text generation',
-            '• AI evaluation service for model selection',
-            '• Confidence scoring for response quality',
-            '• Conversation context preservation',
-          ]),
-          _buildNoteCard(context, 'Upcoming Features', [
-            '• Voice input and text-to-speech',
-            '• Advanced image editing tools',
-            '• Custom AI model fine-tuning',
-            '• Team collaboration features',
-            '• Cloud sync and backup',
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoteCard(
-    BuildContext context,
-    String title,
-    List<String> notes,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...notes.map(
-              (note) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(note),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class DebugInfoScreen extends StatelessWidget {
-  const DebugInfoScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Debug Information'),
-        backgroundColor: AppTheme.surfaceColor,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.copy),
-            onPressed: () {
-              Clipboard.setData(
-                const ClipboardData(text: 'Debug info copied to clipboard'),
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Debug info copied to clipboard')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildDebugSection('System Information', {
-            'Platform': 'Flutter',
-            'Version': '3.32.1',
-            'Dart Version': '3.8.1',
-            'Build Mode': 'Debug',
-          }),
-          _buildDebugSection('App Information', {
-            'Version': '1.0.0+1',
-            'Package': 'com.imagequery.imagequery',
-            'Build Number': '1',
-            'Target SDK': '35',
-          }),
-          _buildDebugSection('API Status', {
-            'Gemini API': 'Connected',
-            'HuggingFace API': 'Connected',
-            'Network': 'Online',
-            'Database': 'Initialized',
-          }),
-          _buildDebugSection('Performance', {
-            'Memory Usage': '~50MB',
-            'Database Size': '~2MB',
-            'Cache Size': '~5MB',
-            'Total Messages': '0',
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDebugSection(String title, Map<String, String> info) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...info.entries.map(
-              (entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(entry.key),
-                    Text(
-                      entry.value,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

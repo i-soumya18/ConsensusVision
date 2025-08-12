@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import '../screens/prompt_library_screen.dart';
 import '../providers/chat_provider.dart';
@@ -29,6 +28,11 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
+
+  // Color getters to replace static AppTheme colors
+  Color get primaryColor => Theme.of(context).colorScheme.primary;
+  Color get surfaceColor => Theme.of(context).colorScheme.surface;
+  Color get onSurfaceColor => Theme.of(context).colorScheme.onSurface;
 
   List<File> _selectedImages = [];
   String? _selectedPromptTemplate;
@@ -88,7 +92,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -163,13 +167,10 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   decoration: _selectedPromptTemplate != null
                       ? BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: AppTheme.primaryColor,
-                            width: 2,
-                          ),
+                          border: Border.all(color: primaryColor, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.2),
+                              color: primaryColor.withOpacity(0.2),
                               blurRadius: 8,
                               spreadRadius: 1,
                             ),
@@ -217,20 +218,17 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryColor.withOpacity(0.1),
-            AppTheme.primaryColor.withOpacity(0.05),
+            primaryColor.withOpacity(0.1),
+            primaryColor.withOpacity(0.05),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.15),
+            color: primaryColor.withOpacity(0.15),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -241,11 +239,11 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
+              color: primaryColor,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: primaryColor.withOpacity(0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -266,7 +264,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   '🚀 **Enhanced AI Prompt** Active',
                   TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                    color: primaryColor,
                     fontSize: 14,
                   ),
                 ),
@@ -276,7 +274,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                       ? '${_selectedPromptTemplate!.substring(0, 50)}...'
                       : _selectedPromptTemplate!,
                   style: TextStyle(
-                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                   ),
@@ -299,7 +299,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     '✨ **Prompt template** cleared',
                     const TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: primaryColor,
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -328,24 +328,21 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryColor.withOpacity(0.08),
-            AppTheme.primaryColor.withOpacity(0.03),
+            primaryColor.withOpacity(0.08),
+            primaryColor.withOpacity(0.03),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: primaryColor.withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.8),
+              color: primaryColor.withOpacity(0.8),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -363,7 +360,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   '⭐ **Default Prompt** for this Chat',
                   TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                    color: primaryColor,
                     fontSize: 13,
                   ),
                 ),
@@ -373,7 +370,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                       ? '${defaultPrompt.substring(0, 50)}...'
                       : defaultPrompt,
                   style: TextStyle(
-                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
                   ),
@@ -397,7 +396,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     '✨ **Default prompt** cleared for this chat',
                     const TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: primaryColor,
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -432,7 +431,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
             width: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primaryColor, width: 2),
+              border: Border.all(color: primaryColor, width: 2),
             ),
             child: Stack(
               children: [
@@ -485,11 +484,11 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: primaryColor,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: primaryColor.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -519,13 +518,13 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
         height: 44,
         decoration: BoxDecoration(
           color: canSend && !widget.isLoading
-              ? AppTheme.primaryColor
-              : AppTheme.primaryColor.withOpacity(0.5),
+              ? primaryColor
+              : primaryColor.withOpacity(0.5),
           shape: BoxShape.circle,
           boxShadow: canSend && !widget.isLoading
               ? [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: primaryColor.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -553,7 +552,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.surfaceColor,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -568,7 +567,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.onSurfaceColor.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -778,7 +779,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               const Text('✨ *Sending enhanced AI request...*'),
             ],
           ),
-          backgroundColor: AppTheme.primaryColor,
+          backgroundColor: primaryColor,
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -831,16 +832,13 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               decoration: BoxDecoration(
                 gradient: _selectedPromptTemplate != null
                     ? LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryColor.withBlue(255),
-                        ],
+                        colors: [primaryColor, primaryColor.withBlue(255)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : null,
                 color: _selectedPromptTemplate == null
-                    ? AppTheme.primaryColor.withOpacity(0.7)
+                    ? primaryColor.withOpacity(0.7)
                     : null,
                 shape: BoxShape.circle,
                 border: _selectedPromptTemplate != null
@@ -849,8 +847,8 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                 boxShadow: [
                   BoxShadow(
                     color: _selectedPromptTemplate != null
-                        ? AppTheme.primaryColor.withOpacity(0.5)
-                        : AppTheme.primaryColor.withOpacity(0.3),
+                        ? primaryColor.withOpacity(0.5)
+                        : primaryColor.withOpacity(0.3),
                     blurRadius: _selectedPromptTemplate != null ? 12 : 8,
                     offset: const Offset(0, 2),
                     spreadRadius: _selectedPromptTemplate != null ? 2 : 0,
@@ -959,7 +957,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
               ),
             ],
           ),
-          backgroundColor: AppTheme.primaryColor,
+          backgroundColor: primaryColor,
           duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -999,7 +997,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   TextStyle _getHintStyle() {
     if (_selectedPromptTemplate != null) {
       return TextStyle(
-        color: AppTheme.primaryColor.withOpacity(0.7),
+        color: primaryColor.withOpacity(0.7),
         fontWeight: FontWeight.w500,
       );
     }
@@ -1007,7 +1005,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     if (chatProvider.currentSessionDefaultPrompt != null) {
       return TextStyle(
-        color: AppTheme.primaryColor.withOpacity(0.6),
+        color: primaryColor.withOpacity(0.6),
         fontWeight: FontWeight.w500,
         fontStyle: FontStyle.italic,
       );
@@ -1015,20 +1013,20 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
 
     return TextStyle(
       fontWeight: FontWeight.w600,
-      color: AppTheme.primaryColor.withOpacity(0.8),
+      color: primaryColor.withOpacity(0.8),
     );
   }
 
   Color _getFillColor() {
     if (_selectedPromptTemplate != null) {
-      return AppTheme.primaryColor.withOpacity(0.05);
+      return primaryColor.withOpacity(0.05);
     }
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     if (chatProvider.currentSessionDefaultPrompt != null) {
-      return AppTheme.primaryColor.withOpacity(0.03);
+      return primaryColor.withOpacity(0.03);
     }
 
-    return AppTheme.backgroundColor;
+    return Theme.of(context).colorScheme.background;
   }
 }

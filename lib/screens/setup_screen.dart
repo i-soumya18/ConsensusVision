@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/config_service.dart';
-import '../theme/app_theme.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
@@ -77,10 +76,14 @@ class _SetupScreenState extends State<SetupScreen> {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Icon(Icons.smart_toy, size: 40, color: AppTheme.primaryColor),
+          child: Icon(
+            Icons.smart_toy,
+            size: 40,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         const SizedBox(height: 20),
         Text(
@@ -93,7 +96,7 @@ class _SetupScreenState extends State<SetupScreen> {
         Text(
           'To get started, please provide your API keys for Gemini AI and Hugging Face.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppTheme.onSurfaceColor.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -174,22 +177,28 @@ class _SetupScreenState extends State<SetupScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: AppTheme.primaryColor, size: 20),
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'How to get API keys',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -209,7 +218,7 @@ class _SetupScreenState extends State<SetupScreen> {
             'Your API keys are stored locally and never shared.',
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.onSurfaceColor.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -231,7 +240,7 @@ class _SetupScreenState extends State<SetupScreen> {
           description,
           style: TextStyle(
             fontSize: 12,
-            color: AppTheme.onSurfaceColor.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -280,7 +289,7 @@ class _SetupScreenState extends State<SetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving configuration: $e'),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

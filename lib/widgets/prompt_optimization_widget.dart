@@ -361,9 +361,11 @@ class _PromptOptimizationWidgetState extends State<PromptOptimizationWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.onSurfaceColor.withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

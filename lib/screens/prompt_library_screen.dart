@@ -154,7 +154,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Prompt Library'),
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

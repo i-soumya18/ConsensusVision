@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_session.dart';
-import '../theme/app_theme.dart';
 
 class ChatSessionsScreen extends StatefulWidget {
   const ChatSessionsScreen({super.key});
@@ -62,20 +61,20 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
           Icon(
             Icons.chat_bubble_outline,
             size: 80,
-            color: AppTheme.onSurfaceColor.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'No chat history yet',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppTheme.onSurfaceColor.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Start your first conversation!',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.onSurfaceColor.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
           const SizedBox(height: 24),
@@ -95,23 +94,29 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: isActive ? 4 : 2,
-      color: isActive ? AppTheme.primaryColor.withOpacity(0.1) : null,
+      color: isActive
+          ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+          : null,
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         leading: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(Icons.chat, color: AppTheme.primaryColor, size: 24),
+          child: Icon(
+            Icons.chat,
+            color: Theme.of(context).colorScheme.primary,
+            size: 24,
+          ),
         ),
         title: Text(
           session.title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: isActive ? AppTheme.primaryColor : null,
+            color: isActive ? Theme.of(context).colorScheme.primary : null,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -124,7 +129,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
               '${session.messageCount} messages',
               style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.onSurfaceColor.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 2),
@@ -132,7 +137,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
               _formatDate(session.lastUpdated),
               style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.onSurfaceColor.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -164,7 +169,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
           ],
           child: Icon(
             Icons.more_vert,
-            color: AppTheme.onSurfaceColor.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
         onTap: () => _selectSession(session, chatProvider),
@@ -273,7 +278,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Delete'),
           ),

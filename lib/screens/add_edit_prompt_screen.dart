@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/prompt_library_service.dart';
 import '../models/prompt.dart';
-import '../theme/app_theme.dart';
 
 class AddEditPromptScreen extends StatefulWidget {
   final Prompt? prompt;
@@ -103,7 +102,7 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Prompt' : 'Add New Prompt'),
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
           if (_isLoading)
             const Center(
@@ -121,7 +120,7 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
               onPressed: _savePrompt,
               child: Text(
                 _isEditing ? 'Update' : 'Save',
-                style: TextStyle(color: AppTheme.primaryColor),
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
             ),
         ],
@@ -239,7 +238,7 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
 
             // Help card
             Card(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -252,14 +251,14 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
                       children: [
                         Icon(
                           Icons.lightbulb_outline,
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Tips for creating effective prompts',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
@@ -272,7 +271,9 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
                       '• Be specific about the desired output format\n'
                       '• Test your prompt to ensure it works as expected',
                       style: TextStyle(
-                        color: AppTheme.onSurfaceColor.withOpacity(0.8),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -303,17 +304,21 @@ class _AddEditPromptScreenState extends State<AddEditPromptScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundColor,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppTheme.onSurfaceColor.withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
                           ),
                         ),
                         child: Text(
                           widget.prompt!.content,
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            color: AppTheme.onSurfaceColor.withOpacity(0.8),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
                           ),
                         ),
                       ),

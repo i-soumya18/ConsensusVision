@@ -32,7 +32,8 @@ class _SplashScreenState extends State<SplashScreen>
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppTheme.primaryColor,
+        systemNavigationBarColor:
+            Colors.blue, // Using Colors.blue instead of Theme-dependent color
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
@@ -188,7 +189,7 @@ class _SplashScreenState extends State<SplashScreen>
         : screenHeight * 0.05;
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -197,9 +198,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryColor,
-              AppTheme.primaryColor.withOpacity(0.8),
-              AppTheme.primaryColor.withBlue(255),
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              Theme.of(context).colorScheme.primary.withBlue(255),
             ],
             stops: const [0.0, 0.5, 1.0],
           ),

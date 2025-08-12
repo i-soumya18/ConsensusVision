@@ -4,12 +4,9 @@ import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../widgets/conversation_context_indicator.dart';
-import '../widgets/context_visualization_widget.dart';
-import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import 'chat_sessions_screen.dart';
 import 'settings_screen.dart';
-import 'context_management_demo_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -20,7 +17,6 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _showContextVisualization = false;
 
   @override
   void initState() {
@@ -57,30 +53,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             isVisible: chatProvider.currentMessages.length > 2,
                           ),
 
-                          // Context visualization debug panel
-                          if (_showContextVisualization &&
-                              chatProvider.currentMessages.isNotEmpty)
-                            Expanded(
-                              flex: 1,
-                              child: SingleChildScrollView(
-                                child: ContextVisualizationWidget(
-                                  allMessages: chatProvider.currentMessages,
-                                  currentQuery:
-                                      chatProvider.currentMessages.isNotEmpty
-                                      ? chatProvider
-                                            .currentMessages
-                                            .last
-                                            .content
-                                      : '',
-                                ),
-                              ),
-                            ),
-
                           // Messages list
-                          Expanded(
-                            flex: _showContextVisualization ? 2 : 1,
-                            child: _buildMessagesList(chatProvider),
-                          ),
+                          Expanded(child: _buildMessagesList(chatProvider)),
                         ],
                       ),
               ),
@@ -133,26 +107,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
             actions: [
-              // Debug Context Button (only in development)
-              IconButton(
-                icon: Icon(
-                  _showContextVisualization
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                  color: _showContextVisualization
-                      ? AppTheme.primaryColor
-                      : null,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _showContextVisualization = !_showContextVisualization;
-                  });
-                },
-                tooltip: _showContextVisualization
-                    ? 'Hide Context Analysis'
-                    : 'Show Context Analysis',
-                iconSize: 24.0,
-              ),
               // New Chat Button
               IconButton(
                 icon: const Icon(Icons.add_comment),
@@ -173,16 +127,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 iconSize: 24.0,
                 itemBuilder: (context) => [
                   const PopupMenuItem(
-                    value: 'context_demo',
-                    child: Row(
-                      children: [
-                        Icon(Icons.psychology),
-                        SizedBox(width: 12),
-                        Text('Context Demo'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
                     value: 'settings',
                     child: Row(
                       children: [
@@ -196,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
             elevation: 0,
-            backgroundColor: AppTheme.surfaceColor,
+            backgroundColor: Theme.of(context).colorScheme.surface,
           );
         },
       ),
@@ -207,21 +151,28 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      color: AppTheme.errorColor.withOpacity(0.1),
+      color: Theme.of(context).colorScheme.error.withOpacity(0.1),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
+          Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.error,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               error,
-              style: TextStyle(color: AppTheme.errorColor, fontSize: 14),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 14,
+              ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.close),
             iconSize: 20,
-            color: AppTheme.errorColor,
+            color: Theme.of(context).colorScheme.error,
             onPressed: () {
               // Clear error in provider
             },
@@ -264,7 +215,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Text(
                   'Upload images and ask questions. I\'ll analyze them using multiple AI models to give you the most accurate answers.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.onSurfaceColor.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -334,9 +287,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'context_demo':
-        _showContextDemo();
-        break;
       case 'settings':
         _showSettings();
         break;
@@ -346,15 +296,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void _createNewChat() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     chatProvider.createNewChatSession();
-  }
-
-  void _showContextDemo() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ContextManagementDemoScreen(),
-      ),
-    );
   }
 
   void _showSettings() {

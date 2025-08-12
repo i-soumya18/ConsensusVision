@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/context_management_service.dart';
 import '../widgets/context_visualization_widget.dart';
+import '../theme/app_theme.dart';
 
 /// Demo screen to showcase context management capabilities
 class ContextManagementDemoScreen extends StatefulWidget {
@@ -46,7 +47,6 @@ class _ContextManagementDemoScreenState
       timestamp: DateTime.now().subtract(
         Duration(minutes: _messageCounter * 2),
       ),
-      imagePaths: [], // Added to fix the lint error
     );
   }
 
@@ -401,8 +401,8 @@ class _ContextManagementDemoScreenState
                 _buildSheetHandle(),
                 Expanded(
                   child: ContextVisualizationWidget(
-                    allMessages: _demoMessages,
-                    currentQuery: _currentQuery,
+                    messages: _demoMessages,
+                    onClose: () => Navigator.pop(context),
                   ),
                 ),
               ],
