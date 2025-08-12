@@ -4,6 +4,8 @@ import '../services/config_service.dart';
 import '../services/theme_service.dart';
 import '../services/export_service.dart';
 import '../services/model_registry_service.dart';
+import '../services/emotional_memory_service.dart';
+import '../models/emotional_state.dart';
 import '../theme/app_theme.dart';
 import '../providers/chat_provider.dart';
 
@@ -92,6 +94,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildModelParametersSection(),
                 const SizedBox(height: 24),
                 _buildSystemPromptSection(),
+                const SizedBox(height: 24),
+                _buildEmotionalIntelligenceSection(),
                 const SizedBox(height: 24),
                 _buildThemeSection(),
                 const SizedBox(height: 24),
@@ -947,6 +951,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _showSnackBar('System prompt reset to default');
     } catch (e) {
       _showSnackBar('Failed to reset system prompt: $e');
+    }
+  }
+
+  Widget _buildEmotionalIntelligenceSection() {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, child) => _buildSectionCard(
+        title: 'Emotional Intelligence',
+        icon: Icons.psychology,
+        children: [
+          SwitchListTile(
+            title: const Text('Enable Emotional Intelligence'),
+            subtitle: const Text(
+              'AI adapts responses based on your emotional state and provides empathetic support',
+            ),
+            value: chatProvider.emotionalIntelligenceEnabled,
+            activeColor: AppTheme.primaryColor,
+            onChanged: (value) {
+              chatProvider.setEmotionalIntelligenceEnabled(value);
+              _showSnackBar(
+                value
+                    ? '🧠 **Emotional Intelligence** enabled - AI will now adapt responses based on your emotional state'
+                    : '🤖 **Standard mode** - AI responses will use default tone',
+              );
+            },
+          ),
+
+          if (chatProvider.emotionalIntelligenceEnabled) ...[
+            const Divider(),
+
+            // Current emotional state display
+            if (chatProvider.currentSession != null) ...[
+              ListTile(
+                leading: Icon(
+                  Icons.insights,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text('Current Emotional Trend'),
+                subtitle: Text(
+                  chatProvider.getCurrentEmotionalTrend().displayName,
+                ),
+                trailing: _getTrendIcon(
+                  chatProvider.getCurrentEmotionalTrend(),
+                ),
+              ),
+
+              // Dominant emotions
+              if (chatProvider.getCurrentDominantEmotions().isNotEmpty) ...[
+                ListTile(
+                  leading: Icon(
+                    Icons.sentiment_satisfied,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: const Text('Dominant Emotions'),
+                  subtitle: Text(
+                    chatProvider
+                        .getCurrentDominantEmotions()
+                        .take(3)
+                        .map((e) => e.displayName)
+                        .join(', '),
+                  ),
+                ),
+              ],
+            ],
+
+            // Feature list
+            ExpansionTile(
+              leading: Icon(
+                Icons.star,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('Features'),
+              children: const [
+                ListTile(
+                  leading: Icon(Icons.sentiment_very_satisfied, size: 20),
+                  title: Text('Real-time Sentiment Analysis'),
+                  subtitle: Text('Analyzes your messages for emotional cues'),
+                  dense: true,
+                ),
+                ListTile(
+                  leading: Icon(Icons.memory, size: 20),
+                  title: Text('Emotional Memory'),
+                  subtitle: Text('Remembers your patterns across sessions'),
+                  dense: true,
+                ),
+                ListTile(
+                  leading: Icon(Icons.support_agent, size: 20),
+                  title: Text('Adaptive Responses'),
+                  subtitle: Text(
+                    'AI adjusts tone based on your emotional state',
+                  ),
+                  dense: true,
+                ),
+                ListTile(
+                  leading: Icon(Icons.favorite, size: 20),
+                  title: Text('Empathetic Support'),
+                  subtitle: Text('Provides emotional support when needed'),
+                  dense: true,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _getTrendIcon(dynamic trend) {
+    // Since we don't have access to EmotionalTrend enum directly here,
+    // we'll use the string representation
+    final trendName = trend.toString();
+
+    if (trendName.contains('improving')) {
+      return Icon(Icons.trending_up, color: Colors.green);
+    } else if (trendName.contains('declining')) {
+      return Icon(Icons.trending_down, color: Colors.orange);
+    } else {
+      return Icon(Icons.trending_flat, color: Colors.blue);
     }
   }
 

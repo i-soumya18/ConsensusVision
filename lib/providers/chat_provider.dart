@@ -5,14 +5,25 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/message.dart';
 import '../models/chat_session.dart';
+import '../models/emotional_state.dart';
 import '../services/database_service.dart';
 import '../services/ai_evaluation_service.dart';
 import '../services/prompt_library_service.dart';
 import '../services/context_management_service.dart';
 import '../services/text_to_speech_service.dart';
+import '../services/sentiment_analysis_service.dart';
+import '../services/emotional_memory_service.dart';
+import '../services/adaptive_response_service.dart';
+import '../services/facial_expression_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AIEvaluationService _aiEvaluationService;
+  final AdaptiveResponseService _adaptiveResponseService =
+      AdaptiveResponseService();
+  final EmotionalMemoryService _emotionalMemoryService =
+      EmotionalMemoryService();
+  final FacialExpressionService _facialExpressionService =
+      FacialExpressionService();
   final Uuid _uuid = const Uuid();
 
   List<ChatSession> _chatSessions = [];
@@ -20,6 +31,7 @@ class ChatProvider extends ChangeNotifier {
   List<Message> _currentMessages = [];
   bool _isLoading = false;
   String? _error;
+  bool _emotionalIntelligenceEnabled = true;
 
   ChatProvider({
     required String geminiApiKey,
@@ -27,7 +39,9 @@ class ChatProvider extends ChangeNotifier {
   }) : _aiEvaluationService = AIEvaluationService(
          geminiApiKey: geminiApiKey,
          huggingFaceApiKey: huggingFaceApiKey,
-       );
+       ) {
+    _initializeEmotionalServices();
+  }
 
   // Getters
   List<ChatSession> get chatSessions => _chatSessions;
@@ -35,6 +49,30 @@ class ChatProvider extends ChangeNotifier {
   List<Message> get currentMessages => _currentMessages;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get emotionalIntelligenceEnabled => _emotionalIntelligenceEnabled;
+
+  /// Initialize emotional intelligence services
+  Future<void> _initializeEmotionalServices() async {
+    try {
+      await _adaptiveResponseService.initialize();
+      await _emotionalMemoryService.initialize();
+      await _facialExpressionService.initialize();
+
+      if (kDebugMode) {
+        print('Emotional intelligence services initialized');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error initializing emotional services: $e');
+      }
+    }
+  }
+
+  /// Toggle emotional intelligence features
+  void setEmotionalIntelligenceEnabled(bool enabled) {
+    _emotionalIntelligenceEnabled = enabled;
+    notifyListeners();
+  }
 
   // Initialize provider
   Future<void> initialize() async {
@@ -189,7 +227,29 @@ class ChatProvider extends ChangeNotifier {
       // Enhance the query with contextual information for better continuity
       finalContent = _enhanceQueryWithAdvancedContext(finalContent);
 
-      // Create user message
+      // Analyze user's emotional state if emotional intelligence is enabled
+      EmotionalState? userEmotionalState;
+      if (_emotionalIntelligenceEnabled) {
+        try {
+          final sentimentAnalysis = SentimentAnalysisService();
+          userEmotionalState = await sentimentAnalysis.analyzeText(
+            content, // Use original content for sentiment analysis
+            context: 'user_message_${_currentSession!.id}',
+          );
+
+          // Store emotional state in memory service
+          await _emotionalMemoryService.addEmotionalState(
+            userEmotionalState,
+            _currentSession!.id,
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error analyzing user emotion: $e');
+          }
+        }
+      }
+
+      // Create user message with emotional context
       final userMessage = Message(
         id: _uuid.v4(),
         content: finalContent,
@@ -197,6 +257,7 @@ class ChatProvider extends ChangeNotifier {
         timestamp: DateTime.now(),
         type: MessageType.user,
         status: MessageStatus.sent,
+        emotionalContext: userEmotionalState,
       );
 
       // Add user message to UI immediately
@@ -231,12 +292,49 @@ class ChatProvider extends ChangeNotifier {
             conversationHistory: conversationHistory,
           );
 
-      // Update AI message with result
+      // Adapt AI response based on emotional intelligence
+      String adaptedResponse = evaluationResult.finalAnswer;
+      ResponseTone? responseTone;
+
+      if (_emotionalIntelligenceEnabled) {
+        try {
+          adaptedResponse = await _adaptiveResponseService.adaptResponse(
+            evaluationResult.finalAnswer,
+            content, // Use original user message for sentiment analysis
+            _currentSession!.id,
+          );
+
+          // Get the response tone that was used
+          responseTone = _emotionalMemoryService.predictOptimalResponseTone(
+            content,
+            _currentSession!.id,
+          );
+
+          // Check if proactive emotional support is needed
+          if (_adaptiveResponseService.shouldProvideEmotionalSupport(
+            _currentSession!.id,
+          )) {
+            final supportMessage = _adaptiveResponseService
+                .generateProactiveSupport(_currentSession!.id);
+            if (supportMessage.isNotEmpty) {
+              adaptedResponse = '$supportMessage\n\n$adaptedResponse';
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error adapting response: $e');
+          }
+          // Fall back to original response
+        }
+      }
+
+      // Update AI message with result and emotional context
       final updatedAiMessage = aiMessage.copyWith(
-        content: evaluationResult.finalAnswer,
+        content: adaptedResponse,
         status: MessageStatus.delivered,
         aiModel: evaluationResult.bestResponse.model,
         confidence: evaluationResult.confidence,
+        responseTone: responseTone,
       );
 
       // Update in memory
@@ -733,6 +831,87 @@ class ChatProvider extends ChangeNotifier {
     _setError(enhancedError);
   }
 
+  // Emotional Intelligence Features
+
+  /// Get emotional insights for the current session
+  Map<String, dynamic> getEmotionalInsights() {
+    if (_currentSession == null || !_emotionalIntelligenceEnabled) {
+      return {};
+    }
+
+    return _emotionalMemoryService.getEmotionalInsights();
+  }
+
+  /// Get emotional context for the current session
+  Map<String, dynamic> getSessionEmotionalContext() {
+    if (_currentSession == null || !_emotionalIntelligenceEnabled) {
+      return {};
+    }
+
+    return _adaptiveResponseService.getEmotionalContext(_currentSession!.id);
+  }
+
+  /// Get dominant emotions from current session
+  List<EmotionType> getCurrentDominantEmotions() {
+    if (!_emotionalIntelligenceEnabled) return [];
+
+    return _emotionalMemoryService.getDominantEmotions();
+  }
+
+  /// Get recent emotional trend
+  EmotionalTrend getCurrentEmotionalTrend() {
+    if (!_emotionalIntelligenceEnabled) return EmotionalTrend.stable;
+
+    return _emotionalMemoryService.getRecentTrend();
+  }
+
+  /// Check if user needs emotional support
+  bool shouldProvideEmotionalSupport() {
+    if (_currentSession == null || !_emotionalIntelligenceEnabled) {
+      return false;
+    }
+
+    return _adaptiveResponseService.shouldProvideEmotionalSupport(
+      _currentSession!.id,
+    );
+  }
+
+  /// Get facial expression capabilities
+  Map<String, dynamic> getFacialExpressionCapabilities() {
+    return _facialExpressionService.getCapabilities();
+  }
+
+  /// Start facial expression monitoring (when implemented)
+  Future<bool> startFacialExpressionMonitoring() async {
+    if (!_emotionalIntelligenceEnabled) return false;
+
+    try {
+      return await _facialExpressionService.startCamera();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error starting facial expression monitoring: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Stop facial expression monitoring
+  Future<void> stopFacialExpressionMonitoring() async {
+    try {
+      await _facialExpressionService.stopCamera();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error stopping facial expression monitoring: $e');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _facialExpressionService.dispose();
+    super.dispose();
+  }
+
   // Get contextual loading message based on conversation state
   String _getContextualLoadingMessage() {
     final userMessageCount = _currentMessages
@@ -767,5 +946,4 @@ class ChatProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-
 }

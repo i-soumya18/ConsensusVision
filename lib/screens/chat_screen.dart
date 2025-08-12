@@ -5,6 +5,7 @@ import '../models/message.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../widgets/conversation_context_indicator.dart';
+import '../widgets/emotional_intelligence_dashboard.dart';
 import '../services/theme_service.dart';
 import 'chat_sessions_screen.dart';
 import 'settings_screen.dart';
@@ -41,6 +42,11 @@ class _ChatScreenState extends State<ChatScreen> {
               // Error banner
               if (chatProvider.error != null)
                 _buildErrorBanner(chatProvider.error!),
+
+              // Emotional Intelligence Dashboard
+              if (chatProvider.emotionalIntelligenceEnabled &&
+                  chatProvider.currentMessages.isNotEmpty)
+                const EmotionalIntelligenceDashboard(),
 
               // Messages area with enhanced context awareness
               Expanded(

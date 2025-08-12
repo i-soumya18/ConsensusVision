@@ -41,6 +41,7 @@ class _ContextManagementDemoScreenState
     return Message(
       id: 'demo_message_$_messageCounter',
       content: content,
+      imagePaths: [], // Add required imagePaths parameter
       type: type,
       timestamp: DateTime.now().subtract(
         Duration(minutes: _messageCounter * 2),
@@ -399,8 +400,8 @@ class _ContextManagementDemoScreenState
                 _buildSheetHandle(),
                 Expanded(
                   child: ContextVisualizationWidget(
-                    messages: _demoMessages,
-                    onClose: () => Navigator.pop(context),
+                    allMessages: _demoMessages,
+                    currentQuery: "Show me visualization of context management",
                   ),
                 ),
               ],

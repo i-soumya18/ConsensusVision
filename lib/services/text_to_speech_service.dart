@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-// Conditional import for Android TTS
-import 'android_tts_service_stub.dart'
-    if (dart.library.io) 'android_tts_service.dart';
+// Conditional import for Android TTS (commented out for Windows compatibility)
+// import 'android_tts_service_stub.dart'
+//     if (dart.library.io) 'android_tts_service.dart';
 
 class TextToSpeechService {
   static final TextToSpeechService _instance = TextToSpeechService._internal();
@@ -13,11 +13,13 @@ class TextToSpeechService {
 
   static const MethodChannel _channel = MethodChannel('text_to_speech');
 
-  // Android TTS service instance
-  AndroidTtsService? _androidTts;
+  // Android TTS service instance (disabled for Windows compatibility)
+  // AndroidTtsService? _androidTts;
 
   // Initialize TTS service
   Future<void> _initializeTts() async {
+    // Android TTS service initialization disabled for Windows compatibility
+    /*
     if (_androidTts == null &&
         defaultTargetPlatform == TargetPlatform.android) {
       try {
@@ -36,6 +38,7 @@ class TextToSpeechService {
         _androidTts = null;
       }
     }
+    */
   }
 
   bool _isInitialized = false;
@@ -105,7 +108,8 @@ class TextToSpeechService {
       // Initialize TTS if not already done
       await _initializeTts();
 
-      // Try using AndroidTtsService first
+      // Try using AndroidTtsService first (disabled for Windows compatibility)
+      /*
       if (_androidTts != null && _androidTts!.isAvailable) {
         final success = await _androidTts!.speak(text);
         if (success) {
@@ -115,6 +119,7 @@ class TextToSpeechService {
           return;
         }
       }
+      */
 
       // Fallback to method channel
       final result = await _channel.invokeMethod('speak', {
@@ -291,7 +296,8 @@ class TextToSpeechService {
   Future<void> stop() async {
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
-        // Stop AndroidTtsService if available
+        // Stop AndroidTtsService if available (disabled for Windows compatibility)
+        /*
         if (_androidTts != null) {
           try {
             await _androidTts!.stop();
@@ -301,6 +307,7 @@ class TextToSpeechService {
             }
           }
         }
+        */
         // Also try method channel as fallback
         try {
           await _channel.invokeMethod('stop');

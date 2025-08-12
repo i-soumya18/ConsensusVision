@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'emotional_state.dart';
 
 part 'message.g.dart';
 
@@ -12,6 +13,9 @@ class Message {
   final MessageStatus status;
   final String? aiModel;
   final double? confidence;
+  final EmotionalState?
+  emotionalContext; // New field for emotional intelligence
+  final ResponseTone? responseTone; // Tone used for AI responses
 
   const Message({
     required this.id,
@@ -22,6 +26,8 @@ class Message {
     this.status = MessageStatus.sent,
     this.aiModel,
     this.confidence,
+    this.emotionalContext,
+    this.responseTone,
   });
 
   factory Message.fromJson(Map<String, dynamic> json) =>
@@ -37,6 +43,8 @@ class Message {
     MessageStatus? status,
     String? aiModel,
     double? confidence,
+    EmotionalState? emotionalContext,
+    ResponseTone? responseTone,
   }) {
     return Message(
       id: id ?? this.id,
@@ -47,6 +55,8 @@ class Message {
       status: status ?? this.status,
       aiModel: aiModel ?? this.aiModel,
       confidence: confidence ?? this.confidence,
+      emotionalContext: emotionalContext ?? this.emotionalContext,
+      responseTone: responseTone ?? this.responseTone,
     );
   }
 }

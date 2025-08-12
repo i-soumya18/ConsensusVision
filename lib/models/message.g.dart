@@ -19,6 +19,15 @@ Message _$MessageFromJson(Map<String, dynamic> json) => Message(
       MessageStatus.sent,
   aiModel: json['aiModel'] as String?,
   confidence: (json['confidence'] as num?)?.toDouble(),
+  emotionalContext: json['emotionalContext'] == null
+      ? null
+      : EmotionalState.fromJson(
+          json['emotionalContext'] as Map<String, dynamic>,
+        ),
+  responseTone: $enumDecodeNullable(
+    _$ResponseToneEnumMap,
+    json['responseTone'],
+  ),
 );
 
 Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
@@ -30,6 +39,8 @@ Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
   'status': _$MessageStatusEnumMap[instance.status]!,
   'aiModel': instance.aiModel,
   'confidence': instance.confidence,
+  'emotionalContext': instance.emotionalContext,
+  'responseTone': _$ResponseToneEnumMap[instance.responseTone],
 };
 
 const _$MessageTypeEnumMap = {
@@ -43,4 +54,17 @@ const _$MessageStatusEnumMap = {
   MessageStatus.sent: 'sent',
   MessageStatus.delivered: 'delivered',
   MessageStatus.error: 'error',
+};
+
+const _$ResponseToneEnumMap = {
+  ResponseTone.supportive: 'supportive',
+  ResponseTone.encouraging: 'encouraging',
+  ResponseTone.celebratory: 'celebratory',
+  ResponseTone.reassuring: 'reassuring',
+  ResponseTone.patient: 'patient',
+  ResponseTone.empathetic: 'empathetic',
+  ResponseTone.professional: 'professional',
+  ResponseTone.casual: 'casual',
+  ResponseTone.enthusiastic: 'enthusiastic',
+  ResponseTone.gentle: 'gentle',
 };
