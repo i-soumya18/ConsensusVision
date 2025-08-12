@@ -104,6 +104,14 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   msix: ^3.16.10
 
+# MSIX configuration for Windows packaging
+msix_config:
+  display_name: LuminiAI
+  publisher_display_name: Soumyaranjan Sahoo
+  identity_name: "com.imagequery.imagequery"
+  msix_version: 4.0.0.0
+  logo_path: assets/icon.png
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -118,6 +126,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
+    - assets/icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -149,14 +158,14 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icons/app_icon.png"
+  image_path: "assets/icon.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
   web:
     generate: true
-    image_path: "assets/icons/app_icon.png"
+    image_path: "assets/icon.png"
     background_color: "#6C63FF"
     theme_color: "#6C63FF"
   windows:
     generate: true
-    image_path: "assets/icons/app_icon.png"
+    image_path: "assets/icon.png"
     icon_size: 48 # min:48, max:256, default: 48

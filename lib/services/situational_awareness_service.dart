@@ -27,7 +27,7 @@ class SituationalAwarenessService {
       _memoryService = PersistentMemoryService.instance;
       await _detectDeviceCapabilities();
       await _updateEnvironmentalContext();
-      
+
       if (kDebugMode) {
         print('Situational Awareness Service initialized for user: $userId');
       }
@@ -51,7 +51,7 @@ class SituationalAwarenessService {
         platform = 'Windows';
         deviceModel = Platform.localHostname;
         osVersion = Platform.operatingSystemVersion;
-        
+
         deviceData = {
           'hostname': Platform.localHostname,
           'operating_system': Platform.operatingSystem,
@@ -72,13 +72,13 @@ class SituationalAwarenessService {
           'right_click_context',
         ]);
 
-        if (Platform.numberOfProcessors > 4) capabilities.add('high_performance');
-        
+        if (Platform.numberOfProcessors > 4)
+          capabilities.add('high_performance');
       } else if (Platform.isAndroid) {
         platform = 'Android';
         deviceModel = 'Android Device';
         osVersion = Platform.operatingSystemVersion;
-        
+
         deviceData = {
           'operating_system': Platform.operatingSystem,
           'os_version': Platform.operatingSystemVersion,
@@ -97,12 +97,11 @@ class SituationalAwarenessService {
           'background_processing',
           'share_functionality',
         ]);
-        
       } else if (Platform.isIOS) {
         platform = 'iOS';
         deviceModel = 'iOS Device';
         osVersion = Platform.operatingSystemVersion;
-        
+
         deviceData = {
           'operating_system': Platform.operatingSystem,
           'os_version': Platform.operatingSystemVersion,
@@ -122,12 +121,11 @@ class SituationalAwarenessService {
           'share_functionality',
           'biometric_auth',
         ]);
-        
       } else if (Platform.isMacOS) {
         platform = 'macOS';
         deviceModel = Platform.localHostname;
         osVersion = Platform.operatingSystemVersion;
-        
+
         deviceData = {
           'hostname': Platform.localHostname,
           'operating_system': Platform.operatingSystem,
@@ -151,7 +149,7 @@ class SituationalAwarenessService {
         platform = 'Linux';
         deviceModel = Platform.localHostname;
         osVersion = Platform.operatingSystemVersion;
-        
+
         deviceData = {
           'hostname': Platform.localHostname,
           'operating_system': Platform.operatingSystem,
@@ -183,8 +181,9 @@ class SituationalAwarenessService {
       ]);
 
       // Get app version
-      String appVersion = '1.0.0'; // Default, could be retrieved from package info
-      
+      String appVersion =
+          '1.0.0'; // Default, could be retrieved from package info
+
       _currentDeviceInfo = DeviceInfo(
         platform: platform,
         deviceModel: deviceModel,
@@ -196,15 +195,16 @@ class SituationalAwarenessService {
       );
 
       if (kDebugMode) {
-        print('Device capabilities detected: ${capabilities.length} capabilities');
+        print(
+          'Device capabilities detected: ${capabilities.length} capabilities',
+        );
         print('Platform: $platform, Model: $deviceModel, OS: $osVersion');
       }
-      
     } catch (e) {
       if (kDebugMode) {
         print('Error detecting device capabilities: $e');
       }
-      
+
       // Fallback device info
       _currentDeviceInfo = DeviceInfo(
         platform: Platform.operatingSystem,
@@ -224,14 +224,15 @@ class SituationalAwarenessService {
 
     try {
       // Get user's timezone preference or detect system timezone
-      String userTimeZone = DateTime.now().timeZoneName; // Fallback to system timezone
-      
+      String userTimeZone =
+          DateTime.now().timeZoneName; // Fallback to system timezone
+
       // Check if this is the first session today
       final lastSessionTime = await _getLastSessionTime();
       final now = DateTime.now();
-      final isFirstSessionToday = lastSessionTime == null || 
-          !_isSameDay(lastSessionTime, now);
-      
+      final isFirstSessionToday =
+          lastSessionTime == null || !_isSameDay(lastSessionTime, now);
+
       // Calculate time since last session
       Duration? timeSinceLastSession;
       if (lastSessionTime != null) {
@@ -256,10 +257,13 @@ class SituationalAwarenessService {
       );
 
       if (kDebugMode) {
-        print('Environmental context updated: ${_currentEnvironmentalContext!.timeOfDay} on ${_currentEnvironmentalContext!.dayOfWeek}');
-        print('Current activity: ${_currentEnvironmentalContext!.currentActivity}');
+        print(
+          'Environmental context updated: ${_currentEnvironmentalContext!.timeOfDay} on ${_currentEnvironmentalContext!.dayOfWeek}',
+        );
+        print(
+          'Current activity: ${_currentEnvironmentalContext!.currentActivity}',
+        );
       }
-      
     } catch (e) {
       if (kDebugMode) {
         print('Error updating environmental context: $e');
@@ -270,7 +274,10 @@ class SituationalAwarenessService {
   /// Get the last session time from memory
   Future<DateTime?> _getLastSessionTime() async {
     try {
-      final lastSessionData = await _memoryService.getContextMemory(_currentUserId!, 'last_session_time');
+      final lastSessionData = await _memoryService.getContextMemory(
+        _currentUserId!,
+        'last_session_time',
+      );
       if (lastSessionData != null) {
         return DateTime.parse(lastSessionData['context_value']);
       }
@@ -284,15 +291,15 @@ class SituationalAwarenessService {
 
   /// Check if two dates are on the same day
   bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year && 
-           date1.month == date2.month && 
-           date1.day == date2.day;
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   /// Update session start time
   Future<void> updateSessionStartTime() async {
     if (_currentUserId == null) return;
-    
+
     await _memoryService.storeContextMemory(
       userId: _currentUserId!,
       contextKey: 'last_session_time',
@@ -306,7 +313,8 @@ class SituationalAwarenessService {
   DeviceInfo? get currentDeviceInfo => _currentDeviceInfo;
 
   /// Get current environmental context
-  EnvironmentalContext? get currentEnvironmentalContext => _currentEnvironmentalContext;
+  EnvironmentalContext? get currentEnvironmentalContext =>
+      _currentEnvironmentalContext;
 
   /// Check if device has specific capability
   bool hasCapability(String capability) {
@@ -316,31 +324,40 @@ class SituationalAwarenessService {
   /// Get contextual greeting based on time and situation
   String getContextualGreeting() {
     if (_currentEnvironmentalContext == null) return 'Hello!';
-    
+
     final timeOfDay = _currentEnvironmentalContext!.timeOfDay;
     final isFirstToday = _currentEnvironmentalContext!.isFirstSessionToday;
-    final timeSinceLastSession = _currentEnvironmentalContext!.timeSinceLastSession;
-    
+    final timeSinceLastSession =
+        _currentEnvironmentalContext!.timeSinceLastSession;
+
     String greeting = '';
-    
+
     // Time-based greeting
     switch (timeOfDay) {
       case 'morning':
-        greeting = isFirstToday ? 'Good morning!' : 'Welcome back this morning!';
+        greeting = isFirstToday
+            ? 'Good morning!'
+            : 'Welcome back this morning!';
         break;
       case 'afternoon':
-        greeting = isFirstToday ? 'Good afternoon!' : 'Welcome back this afternoon!';
+        greeting = isFirstToday
+            ? 'Good afternoon!'
+            : 'Welcome back this afternoon!';
         break;
       case 'evening':
-        greeting = isFirstToday ? 'Good evening!' : 'Welcome back this evening!';
+        greeting = isFirstToday
+            ? 'Good evening!'
+            : 'Welcome back this evening!';
         break;
       case 'night':
-        greeting = isFirstToday ? 'Working late tonight?' : 'Welcome back tonight!';
+        greeting = isFirstToday
+            ? 'Working late tonight?'
+            : 'Welcome back tonight!';
         break;
       default:
         greeting = 'Hello!';
     }
-    
+
     // Add continuity context
     if (timeSinceLastSession != null) {
       if (timeSinceLastSession.inMinutes < 5) {
@@ -351,16 +368,16 @@ class SituationalAwarenessService {
         greeting += ' How has your day been going?';
       }
     }
-    
+
     return greeting;
   }
 
   /// Get device-specific recommendations
   List<String> getDeviceSpecificRecommendations() {
     if (_currentDeviceInfo == null) return [];
-    
+
     List<String> recommendations = [];
-    
+
     // Platform-specific recommendations
     switch (_currentDeviceInfo!.platform.toLowerCase()) {
       case 'windows':
@@ -404,7 +421,7 @@ class SituationalAwarenessService {
         ]);
         break;
     }
-    
+
     // Capability-based recommendations
     if (hasCapability('camera')) {
       recommendations.add('You can directly capture images for analysis');
@@ -413,19 +430,21 @@ class SituationalAwarenessService {
       recommendations.add('Your device can handle complex image processing');
     }
     if (hasCapability('high_memory')) {
-      recommendations.add('Large images and documents can be processed efficiently');
+      recommendations.add(
+        'Large images and documents can be processed efficiently',
+      );
     }
     if (hasCapability('gps_location')) {
       recommendations.add('Location-based features are available');
     }
-    
+
     return recommendations;
   }
 
   /// Get optimal response format based on device capabilities
   Map<String, dynamic> getOptimalResponseFormat() {
     if (_currentDeviceInfo == null) return {'format': 'text'};
-    
+
     Map<String, dynamic> format = {
       'format': 'text',
       'max_length': 'medium',
@@ -433,7 +452,7 @@ class SituationalAwarenessService {
       'include_emojis': false,
       'preferred_media': [],
     };
-    
+
     // Adjust based on platform
     switch (_currentDeviceInfo!.platform.toLowerCase()) {
       case 'windows':
@@ -450,7 +469,7 @@ class SituationalAwarenessService {
         format['preferred_media'] = ['images'];
         break;
     }
-    
+
     // Adjust based on current activity
     if (_currentEnvironmentalContext != null) {
       switch (_currentEnvironmentalContext!.currentActivity) {
@@ -468,7 +487,7 @@ class SituationalAwarenessService {
           break;
       }
     }
-    
+
     return format;
   }
 
@@ -482,7 +501,7 @@ class SituationalAwarenessService {
     Map<String, dynamic> temporalContext = const {},
   }) async {
     await _updateEnvironmentalContext(); // Ensure latest context
-    
+
     return ConversationContext(
       id: 'ctx_${DateTime.now().millisecondsSinceEpoch}',
       sessionId: sessionId,
@@ -495,21 +514,25 @@ class SituationalAwarenessService {
         'user_timezone': _currentEnvironmentalContext?.userTimeZone,
         'session_activity': _currentEnvironmentalContext?.currentActivity,
       },
-      environmentalContext: _currentEnvironmentalContext ?? EnvironmentalContext.createCurrent(
-        deviceType: _currentDeviceInfo?.platform ?? 'unknown',
-        userTimeZone: DateTime.now().timeZoneName,
-        deviceCapabilities: {},
-      ),
-      currentIntent: currentIntent ?? UserIntent(
-        id: 'intent_unknown',
-        type: IntentType.assistance,
-        confidence: 0.5,
-        description: 'General assistance',
-        parameters: [],
-        context: {},
-        inferredAt: DateTime.now(),
-        alternativeIntents: [],
-      ),
+      environmentalContext:
+          _currentEnvironmentalContext ??
+          EnvironmentalContext.createCurrent(
+            deviceType: _currentDeviceInfo?.platform ?? 'unknown',
+            userTimeZone: DateTime.now().timeZoneName,
+            deviceCapabilities: {},
+          ),
+      currentIntent:
+          currentIntent ??
+          UserIntent(
+            id: 'intent_unknown',
+            type: IntentType.assistance,
+            confidence: 0.5,
+            description: 'General assistance',
+            parameters: [],
+            context: {},
+            inferredAt: DateTime.now(),
+            alternativeIntents: [],
+          ),
       referencedEntities: referencedEntities,
       temporalContext: {
         ...temporalContext,
@@ -524,25 +547,31 @@ class SituationalAwarenessService {
   /// Calculate context continuity score
   Future<double> _calculateContextContinuityScore(String sessionId) async {
     if (_currentUserId == null) return 0.5;
-    
+
     try {
       // Check for session continuity
-      final continuity = await _memoryService.getSessionContinuity(_currentUserId!, sessionId);
+      final continuity = await _memoryService.getSessionContinuity(
+        _currentUserId!,
+        sessionId,
+      );
       if (continuity != null) {
         return continuity['continuity_score'] as double;
       }
-      
+
       // Check recent topic memory
-      final topicMemory = await _memoryService.getTopicMemory(_currentUserId!, limit: 10);
+      final topicMemory = await _memoryService.getTopicMemory(
+        _currentUserId!,
+        limit: 10,
+      );
       if (topicMemory.isNotEmpty) {
         final recentTopics = topicMemory.where((topic) {
           final lastDiscussed = topic['last_discussed'] as DateTime;
           return DateTime.now().difference(lastDiscussed).inHours < 24;
         }).length;
-        
+
         return (recentTopics / 10.0).clamp(0.0, 1.0);
       }
-      
+
       return 0.5; // Default score
     } catch (e) {
       if (kDebugMode) {
@@ -561,7 +590,8 @@ class SituationalAwarenessService {
       'contextual_greeting': getContextualGreeting(),
       'device_recommendations': getDeviceSpecificRecommendations(),
       'optimal_response_format': getOptimalResponseFormat(),
-      'awareness_health': _currentDeviceInfo != null && _currentEnvironmentalContext != null,
+      'awareness_health':
+          _currentDeviceInfo != null && _currentEnvironmentalContext != null,
     };
   }
 }

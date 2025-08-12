@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 import '../providers/context_aware_chat_provider.dart';
 import '../models/message.dart';
 import '../widgets/message_bubble.dart';
@@ -35,52 +36,118 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: Consumer<ContextAwareChatProvider>(
-        builder: (context, chatProvider, child) {
-          return Column(
-            children: [
-              // Error banner
-              if (chatProvider.error != null)
-                _buildErrorBanner(chatProvider.error!),
+      body: Stack(
+        children: [
+          // WhatsApp-inspired background pattern
+          _buildWhatsAppBackground(context),
+          
+          // Main chat content
+          Consumer<ContextAwareChatProvider>(
+            builder: (context, chatProvider, child) {
+              return Column(
+                children: [
+                  // Error banner
+                  if (chatProvider.error != null)
+                    _buildErrorBanner(chatProvider.error!),
 
-              // Emotional Intelligence Dashboard
-              if (chatProvider.enableEmotionalIntelligence &&
-                  chatProvider.currentMessages.isNotEmpty)
-                const EmotionalIntelligenceDashboard(),
+                  // Emotional Intelligence Dashboard
+                  if (chatProvider.enableEmotionalIntelligence &&
+                      chatProvider.currentMessages.isNotEmpty)
+                    const EmotionalIntelligenceDashboard(),
 
-              // Messages area with enhanced context awareness
-              Expanded(
-                child: chatProvider.currentMessages.isEmpty
-                    ? _buildEmptyState()
-                    : Column(
-                        children: [
-                          // Show conversation context indicator for ongoing conversations
-                          ConversationContextIndicator(
-                            messages: chatProvider.currentMessages,
-                            isVisible: chatProvider.currentMessages.length > 2,
+                  // Messages area with enhanced context awareness
+                  Expanded(
+                    child: chatProvider.currentMessages.isEmpty
+                        ? _buildEmptyState()
+                        : Column(
+                            children: [
+                              // Show conversation context indicator for ongoing conversations
+                              ConversationContextIndicator(
+                                messages: chatProvider.currentMessages,
+                                isVisible: chatProvider.currentMessages.length > 2,
+                              ),
+
+                              // Messages list
+                              Expanded(child: _buildMessagesList(chatProvider)),
+                            ],
                           ),
+                  ),
 
-                          // Messages list
-                          Expanded(child: _buildMessagesList(chatProvider)),
-                        ],
-                      ),
-              ),
+                  // Input area
+                  MessageInputWidget(
+                    onSendMessage: (message, images, {String? promptTemplate}) {
+                      chatProvider.sendMessage(
+                        content: message,
+                        images: images,
+                        promptTemplate: promptTemplate,
+                      );
+                      _scrollToBottom();
+                    },
+                    isLoading: chatProvider.isLoading,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-              // Input area
-              MessageInputWidget(
-                onSendMessage: (message, images, {String? promptTemplate}) {
-                  chatProvider.sendMessage(
-                    content: message,
-                    images: images,
-                    promptTemplate: promptTemplate,
-                  );
-                  _scrollToBottom();
-                },
-                isLoading: chatProvider.isLoading,
-              ),
-            ],
-          );
-        },
+  Widget _buildWhatsAppBackground(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark 
+            ? const Color(0xFF0D1418) // WhatsApp dark chat background
+            : const Color(0xFFE5DDD5), // WhatsApp light chat background
+      ),
+      child: Stack(
+        children: [
+          // Main pattern background
+          CustomPaint(
+            painter: WhatsAppBackgroundPainter(isDark: isDark),
+            size: Size.infinite,
+          ),
+          
+          // Floating decorative elements
+          ...List.generate(6, (index) => _buildFloatingElement(context, index, isDark)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingElement(BuildContext context, int index, bool isDark) {
+    final screenSize = MediaQuery.of(context).size;
+    final positions = [
+      [screenSize.height * 0.1, screenSize.width * 0.85, null], // top, left, right
+      [screenSize.height * 0.25, null, screenSize.width * 0.9],
+      [screenSize.height * 0.4, screenSize.width * 0.05, null],
+      [screenSize.height * 0.6, null, screenSize.width * 0.05],
+      [screenSize.height * 0.75, screenSize.width * 0.8, null],
+      [screenSize.height * 0.9, null, screenSize.width * 0.1],
+    ];
+    
+    final position = positions[index];
+    final sizes = [12.0, 8.0, 15.0, 10.0, 6.0, 9.0];
+    final size = sizes[index];
+    
+    return Positioned(
+      top: position[0],
+      left: position[1],
+      right: position[2],
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDark 
+              ? Colors.white.withOpacity(0.03)
+              : Colors.black.withOpacity(0.04),
+        ),
       ),
     );
   }
@@ -108,7 +175,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  'ImageQuery AI',
+                  'Lumini AI',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -192,46 +259,90 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildEmptyState() {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: themeService.primaryColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.smart_toy,
-                  size: 60,
-                  color: themeService.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Welcome to ImageQuery AI',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  'Upload images and ask questions. I\'ll analyze them using multiple AI models to give you the most accurate answers.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return Container(
+          decoration: BoxDecoration(
+            // Semi-transparent overlay for better readability on patterned background
+            color: isDark
+                ? Colors.black.withOpacity(0.2)
+                : Colors.white.withOpacity(0.3),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: themeService.primaryColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeService.primaryColor.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
+                  child: Icon(
+                    Icons.smart_toy,
+                    size: 60,
+                    color: themeService.primaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              _buildSuggestionChips(themeService),
-            ],
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'Welcome to Lumini AI',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'Upload images and ask questions. I\'ll analyze them using multiple AI models to give you the most accurate answers.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.8),
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                _buildSuggestionChips(themeService),
+              ],
+            ),
           ),
         );
       },
@@ -246,51 +357,79 @@ class _ChatScreenState extends State<ChatScreen> {
       'Compare photos',
     ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: suggestions.map((suggestion) {
-        return ActionChip(
-          label: Text(suggestion),
-          onPressed: () {
-            // Auto-fill suggestion in message input
-          },
-          backgroundColor: themeService.primaryColor.withOpacity(0.1),
-          labelStyle: TextStyle(
-            color: themeService.primaryColor,
-            fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        );
-      }).toList(),
+        ],
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: suggestions.map((suggestion) {
+          return ActionChip(
+            label: Text(suggestion),
+            onPressed: () {
+              // Auto-fill suggestion in message input
+            },
+            backgroundColor: themeService.primaryColor.withOpacity(0.15),
+            labelStyle: TextStyle(
+              color: themeService.primaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 2,
+            pressElevation: 4,
+            shadowColor: themeService.primaryColor.withOpacity(0.3),
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildMessagesList(ContextAwareChatProvider chatProvider) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: chatProvider.currentMessages.length,
-      itemBuilder: (context, index) {
-        final message = chatProvider.currentMessages[index];
-        return MessageBubble(
-          message: message,
-          onRetry: () => chatProvider.retryLastMessage(),
-          onEdit: message.type == MessageType.user
-              ? () => _showEditMessageDialog(context, chatProvider, message)
-              : null,
-          onShare: message.type == MessageType.ai
-              ? () => _shareMessage(context, chatProvider, message)
-              : null,
-          onReadAloud: message.type == MessageType.ai
-              ? () => _readMessageAloud(context, chatProvider, message)
-              : null,
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        // Semi-transparent overlay to improve message readability
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.black.withOpacity(0.1)
+            : Colors.white.withOpacity(0.15),
+      ),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: chatProvider.currentMessages.length,
+        itemBuilder: (context, index) {
+          final message = chatProvider.currentMessages[index];
+          return MessageBubble(
+            message: message,
+            onRetry: () => chatProvider.retryLastMessage(),
+            onEdit: message.type == MessageType.user
+                ? () => _showEditMessageDialog(context, chatProvider, message)
+                : null,
+            onShare: message.type == MessageType.ai
+                ? () => _shareMessage(context, chatProvider, message)
+                : null,
+            onReadAloud: message.type == MessageType.ai
+                ? () => _readMessageAloud(context, chatProvider, message)
+                : null,
+          );
+        },
+      ),
     );
   }
 
   void _showChatSessions() {
-    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(
+      context,
+      listen: false,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider.value(
@@ -310,12 +449,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _createNewChat() {
-    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(
+      context,
+      listen: false,
+    );
     chatProvider.createNewChatSession();
   }
 
   void _showSettings() {
-    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(
+      context,
+      listen: false,
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -458,4 +603,117 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+}
+
+/// WhatsApp-inspired background painter that creates subtle pattern elements
+class WhatsAppBackgroundPainter extends CustomPainter {
+  final bool isDark;
+  
+  WhatsAppBackgroundPainter({required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 1.0;
+
+    // Create subtle geometric pattern similar to WhatsApp
+    _drawSubtlePattern(canvas, size, paint);
+    
+    // Add very faint overlay texture
+    _drawTextureOverlay(canvas, size, paint);
+  }
+
+  void _drawSubtlePattern(Canvas canvas, Size size, Paint paint) {
+    // Very subtle pattern color
+    paint.color = isDark 
+        ? Colors.white.withOpacity(0.02)
+        : Colors.black.withOpacity(0.03);
+
+    final spacing = 80.0;
+    final dotRadius = 1.5;
+
+    // Create a subtle dot pattern
+    for (double x = 0; x < size.width + spacing; x += spacing) {
+      for (double y = 0; y < size.height + spacing; y += spacing) {
+        // Add slight randomization to avoid perfect grid
+        final offsetX = x + (math.sin(y / 100) * 8);
+        final offsetY = y + (math.cos(x / 100) * 8);
+        
+        canvas.drawCircle(
+          Offset(offsetX, offsetY),
+          dotRadius,
+          paint,
+        );
+      }
+    }
+
+    // Add very faint diagonal lines for texture
+    paint.strokeWidth = 0.5;
+    paint.style = PaintingStyle.stroke;
+    paint.color = isDark 
+        ? Colors.white.withOpacity(0.01)
+        : Colors.black.withOpacity(0.015);
+
+    final lineSpacing = 120.0;
+    for (double i = -size.height; i < size.width + size.height; i += lineSpacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  void _drawTextureOverlay(Canvas canvas, Size size, Paint paint) {
+    // Very subtle noise texture using small rectangles
+    paint.style = PaintingStyle.fill;
+    paint.color = isDark 
+        ? Colors.white.withOpacity(0.008)
+        : Colors.black.withOpacity(0.012);
+
+    final random = math.Random(42); // Fixed seed for consistent pattern
+    final noiseCount = (size.width * size.height / 10000).floor();
+
+    for (int i = 0; i < noiseCount; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final width = random.nextDouble() * 3 + 1;
+      final height = random.nextDouble() * 3 + 1;
+      
+      canvas.drawRect(
+        Rect.fromLTWH(x, y, width, height),
+        paint,
+      );
+    }
+
+    // Add very subtle gradient overlay for depth
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: isDark
+          ? [
+              Colors.white.withOpacity(0.015),
+              Colors.transparent,
+              Colors.black.withOpacity(0.02),
+            ]
+          : [
+              Colors.white.withOpacity(0.3),
+              Colors.transparent,
+              Colors.black.withOpacity(0.05),
+            ],
+      stops: const [0.0, 0.5, 1.0],
+    );
+
+    final gradientPaint = Paint()
+      ..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      gradientPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

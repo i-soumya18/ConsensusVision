@@ -370,7 +370,10 @@ class _EmotionalIntelligenceDashboardState
     }
   }
 
-  void _showDetailedAnalytics(BuildContext context, ContextAwareChatProvider chatProvider) {
+  void _showDetailedAnalytics(
+    BuildContext context,
+    ContextAwareChatProvider chatProvider,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

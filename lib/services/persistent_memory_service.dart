@@ -12,7 +12,7 @@ import '../models/conversation_context.dart';
 class PersistentMemoryService {
   static PersistentMemoryService? _instance;
   static Database? _memoryDatabase;
-  
+
   // Table names for memory storage
   static const String _userProfilesTable = 'user_profiles';
   static const String _conversationContextsTable = 'conversation_contexts';
@@ -38,7 +38,7 @@ class PersistentMemoryService {
       }
 
       _memoryDatabase = await _initMemoryDatabase();
-      
+
       if (kDebugMode) {
         print('Persistent Memory Service initialized successfully');
       }
@@ -184,18 +184,40 @@ class PersistentMemoryService {
     ''');
 
     // Create indexes for better performance
-    await db.execute('CREATE INDEX idx_context_user_id ON $_conversationContextsTable (session_id)');
-    await db.execute('CREATE INDEX idx_context_timestamp ON $_conversationContextsTable (timestamp)');
-    await db.execute('CREATE INDEX idx_behavior_user_id ON $_behaviorPatternsTable (user_id)');
-    await db.execute('CREATE INDEX idx_behavior_type ON $_behaviorPatternsTable (type)');
-    await db.execute('CREATE INDEX idx_memory_user_key ON $_contextMemoryTable (user_id, context_key)');
-    await db.execute('CREATE INDEX idx_memory_type ON $_contextMemoryTable (context_type)');
-    await db.execute('CREATE INDEX idx_intent_user_session ON $_intentHistoryTable (user_id, session_id)');
-    await db.execute('CREATE INDEX idx_topic_user_name ON $_topicMemoryTable (user_id, topic_name)');
-    await db.execute('CREATE INDEX idx_continuity_user ON $_sessionContinuityTable (user_id)');
+    await db.execute(
+      'CREATE INDEX idx_context_user_id ON $_conversationContextsTable (session_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_context_timestamp ON $_conversationContextsTable (timestamp)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_behavior_user_id ON $_behaviorPatternsTable (user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_behavior_type ON $_behaviorPatternsTable (type)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_memory_user_key ON $_contextMemoryTable (user_id, context_key)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_memory_type ON $_contextMemoryTable (context_type)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_intent_user_session ON $_intentHistoryTable (user_id, session_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_topic_user_name ON $_topicMemoryTable (user_id, topic_name)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_continuity_user ON $_sessionContinuityTable (user_id)',
+    );
   }
 
-  Future<void> _onMemoryUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onMemoryUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     // Handle database upgrades here
     if (oldVersion < newVersion) {
       // Add migration logic if needed
@@ -205,7 +227,7 @@ class PersistentMemoryService {
   /// Store user profile with comprehensive information
   Future<void> saveUserProfile(UserProfile profile) async {
     final db = _memoryDatabase!;
-    
+
     final profileMap = {
       'id': profile.id,
       'name': profile.name,
@@ -213,10 +235,16 @@ class PersistentMemoryService {
       'last_active': profile.lastActive.millisecondsSinceEpoch,
       'preferences': jsonEncode(profile.preferences.toJson()),
       'device_info': jsonEncode(profile.deviceInfo.toJson()),
-      'behavior_patterns': jsonEncode(profile.behaviorPatterns.map((p) => p.toJson()).toList()),
+      'behavior_patterns': jsonEncode(
+        profile.behaviorPatterns.map((p) => p.toJson()).toList(),
+      ),
       'context_memory': jsonEncode(profile.contextMemory),
       'frequent_topics': jsonEncode(profile.frequentTopics),
-      'project_timelines': jsonEncode(profile.projectTimelines.map((k, v) => MapEntry(k, v.millisecondsSinceEpoch))),
+      'project_timelines': jsonEncode(
+        profile.projectTimelines.map(
+          (k, v) => MapEntry(k, v.millisecondsSinceEpoch),
+        ),
+      ),
     };
 
     await db.insert(
@@ -242,30 +270,48 @@ class PersistentMemoryService {
       id: data['id'] as String,
       name: data['name'] as String,
       createdAt: DateTime.fromMillisecondsSinceEpoch(data['created_at'] as int),
-      lastActive: DateTime.fromMillisecondsSinceEpoch(data['last_active'] as int),
-      preferences: UserPreferences.fromJson(jsonDecode(data['preferences'] as String)),
-      deviceInfo: DeviceInfo.fromJson(jsonDecode(data['device_info'] as String)),
-      behaviorPatterns: (jsonDecode(data['behavior_patterns'] as String) as List)
-          .map((p) => BehaviorPattern.fromJson(p))
-          .toList(),
-      contextMemory: Map<String, dynamic>.from(jsonDecode(data['context_memory'] as String)),
-      frequentTopics: List<String>.from(jsonDecode(data['frequent_topics'] as String)),
-      projectTimelines: (jsonDecode(data['project_timelines'] as String) as Map<String, dynamic>)
-          .map((k, v) => MapEntry(k, DateTime.fromMillisecondsSinceEpoch(v as int))),
+      lastActive: DateTime.fromMillisecondsSinceEpoch(
+        data['last_active'] as int,
+      ),
+      preferences: UserPreferences.fromJson(
+        jsonDecode(data['preferences'] as String),
+      ),
+      deviceInfo: DeviceInfo.fromJson(
+        jsonDecode(data['device_info'] as String),
+      ),
+      behaviorPatterns:
+          (jsonDecode(data['behavior_patterns'] as String) as List)
+              .map((p) => BehaviorPattern.fromJson(p))
+              .toList(),
+      contextMemory: Map<String, dynamic>.from(
+        jsonDecode(data['context_memory'] as String),
+      ),
+      frequentTopics: List<String>.from(
+        jsonDecode(data['frequent_topics'] as String),
+      ),
+      projectTimelines:
+          (jsonDecode(data['project_timelines'] as String)
+                  as Map<String, dynamic>)
+              .map(
+                (k, v) =>
+                    MapEntry(k, DateTime.fromMillisecondsSinceEpoch(v as int)),
+              ),
     );
   }
 
   /// Store conversation context for future reference
   Future<void> saveConversationContext(ConversationContext context) async {
     final db = _memoryDatabase!;
-    
+
     final contextMap = {
       'id': context.id,
       'session_id': context.sessionId,
       'timestamp': context.timestamp.millisecondsSinceEpoch,
       'active_topics': jsonEncode(context.activeTopics),
       'situational_context': jsonEncode(context.situationalContext),
-      'environmental_context': jsonEncode(context.environmentalContext.toJson()),
+      'environmental_context': jsonEncode(
+        context.environmentalContext.toJson(),
+      ),
       'current_intent': jsonEncode(context.currentIntent.toJson()),
       'referenced_entities': jsonEncode(context.referencedEntities),
       'temporal_context': jsonEncode(context.temporalContext),
@@ -280,7 +326,9 @@ class PersistentMemoryService {
   }
 
   /// Retrieve conversation contexts for a session
-  Future<List<ConversationContext>> getConversationContexts(String sessionId) async {
+  Future<List<ConversationContext>> getConversationContexts(
+    String sessionId,
+  ) async {
     final db = _memoryDatabase!;
     final results = await db.query(
       _conversationContextsTable,
@@ -289,24 +337,45 @@ class PersistentMemoryService {
       orderBy: 'timestamp DESC',
     );
 
-    return results.map((data) => ConversationContext(
-      id: data['id'] as String,
-      sessionId: data['session_id'] as String,
-      timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
-      activeTopics: List<String>.from(jsonDecode(data['active_topics'] as String)),
-      situationalContext: Map<String, dynamic>.from(jsonDecode(data['situational_context'] as String)),
-      environmentalContext: EnvironmentalContext.fromJson(jsonDecode(data['environmental_context'] as String)),
-      currentIntent: UserIntent.fromJson(jsonDecode(data['current_intent'] as String)),
-      referencedEntities: List<String>.from(jsonDecode(data['referenced_entities'] as String)),
-      temporalContext: Map<String, dynamic>.from(jsonDecode(data['temporal_context'] as String)),
-      contextContinuityScore: data['context_continuity_score'] as double,
-    )).toList();
+    return results
+        .map(
+          (data) => ConversationContext(
+            id: data['id'] as String,
+            sessionId: data['session_id'] as String,
+            timestamp: DateTime.fromMillisecondsSinceEpoch(
+              data['timestamp'] as int,
+            ),
+            activeTopics: List<String>.from(
+              jsonDecode(data['active_topics'] as String),
+            ),
+            situationalContext: Map<String, dynamic>.from(
+              jsonDecode(data['situational_context'] as String),
+            ),
+            environmentalContext: EnvironmentalContext.fromJson(
+              jsonDecode(data['environmental_context'] as String),
+            ),
+            currentIntent: UserIntent.fromJson(
+              jsonDecode(data['current_intent'] as String),
+            ),
+            referencedEntities: List<String>.from(
+              jsonDecode(data['referenced_entities'] as String),
+            ),
+            temporalContext: Map<String, dynamic>.from(
+              jsonDecode(data['temporal_context'] as String),
+            ),
+            contextContinuityScore: data['context_continuity_score'] as double,
+          ),
+        )
+        .toList();
   }
 
   /// Store behavior pattern
-  Future<void> saveBehaviorPattern(BehaviorPattern pattern, String userId) async {
+  Future<void> saveBehaviorPattern(
+    BehaviorPattern pattern,
+    String userId,
+  ) async {
     final db = _memoryDatabase!;
-    
+
     final patternMap = {
       'id': pattern.id,
       'user_id': userId,
@@ -337,7 +406,7 @@ class PersistentMemoryService {
   }) async {
     final db = _memoryDatabase!;
     final now = DateTime.now();
-    
+
     final memoryMap = {
       'id': '${userId}_${contextKey}_${now.millisecondsSinceEpoch}',
       'user_id': userId,
@@ -359,11 +428,15 @@ class PersistentMemoryService {
   }
 
   /// Retrieve contextual memory
-  Future<Map<String, dynamic>?> getContextMemory(String userId, String contextKey) async {
+  Future<Map<String, dynamic>?> getContextMemory(
+    String userId,
+    String contextKey,
+  ) async {
     final db = _memoryDatabase!;
     final results = await db.query(
       _contextMemoryTable,
-      where: 'user_id = ? AND context_key = ? AND (expires_at IS NULL OR expires_at > ?)',
+      where:
+          'user_id = ? AND context_key = ? AND (expires_at IS NULL OR expires_at > ?)',
       whereArgs: [userId, contextKey, DateTime.now().millisecondsSinceEpoch],
       orderBy: 'importance_score DESC, last_accessed DESC',
       limit: 1,
@@ -372,7 +445,7 @@ class PersistentMemoryService {
     if (results.isEmpty) return null;
 
     final data = results.first;
-    
+
     // Update access information
     await db.update(
       _contextMemoryTable,
@@ -389,15 +462,23 @@ class PersistentMemoryService {
       'context_type': data['context_type'],
       'importance_score': data['importance_score'],
       'access_count': data['access_count'],
-      'created_at': DateTime.fromMillisecondsSinceEpoch(data['created_at'] as int),
-      'last_accessed': DateTime.fromMillisecondsSinceEpoch(data['last_accessed'] as int),
+      'created_at': DateTime.fromMillisecondsSinceEpoch(
+        data['created_at'] as int,
+      ),
+      'last_accessed': DateTime.fromMillisecondsSinceEpoch(
+        data['last_accessed'] as int,
+      ),
     };
   }
 
   /// Store user intent for pattern analysis
-  Future<void> storeUserIntent(UserIntent intent, String userId, String sessionId) async {
+  Future<void> storeUserIntent(
+    UserIntent intent,
+    String userId,
+    String sessionId,
+  ) async {
     final db = _memoryDatabase!;
-    
+
     final intentMap = {
       'id': intent.id,
       'user_id': userId,
@@ -408,7 +489,9 @@ class PersistentMemoryService {
       'parameters': jsonEncode(intent.parameters),
       'context': jsonEncode(intent.context),
       'inferred_at': intent.inferredAt.millisecondsSinceEpoch,
-      'alternative_intents': jsonEncode(intent.alternativeIntents.map((i) => i.name).toList()),
+      'alternative_intents': jsonEncode(
+        intent.alternativeIntents.map((i) => i.name).toList(),
+      ),
     };
 
     await db.insert(
@@ -419,7 +502,10 @@ class PersistentMemoryService {
   }
 
   /// Get recent intent history for pattern analysis
-  Future<List<UserIntent>> getRecentIntents(String userId, {int limit = 50}) async {
+  Future<List<UserIntent>> getRecentIntents(
+    String userId, {
+    int limit = 50,
+  }) async {
     final db = _memoryDatabase!;
     final results = await db.query(
       _intentHistoryTable,
@@ -429,18 +515,35 @@ class PersistentMemoryService {
       limit: limit,
     );
 
-    return results.map((data) => UserIntent(
-      id: data['id'] as String,
-      type: IntentType.values.firstWhere((t) => t.name == data['intent_type']),
-      confidence: data['confidence'] as double,
-      description: data['description'] as String,
-      parameters: List<String>.from(jsonDecode(data['parameters'] as String)),
-      context: Map<String, dynamic>.from(jsonDecode(data['context'] as String)),
-      inferredAt: DateTime.fromMillisecondsSinceEpoch(data['inferred_at'] as int),
-      alternativeIntents: (jsonDecode(data['alternative_intents'] as String) as List<String>)
-          .map((name) => IntentType.values.firstWhere((t) => t.name == name))
-          .toList(),
-    )).toList();
+    return results
+        .map(
+          (data) => UserIntent(
+            id: data['id'] as String,
+            type: IntentType.values.firstWhere(
+              (t) => t.name == data['intent_type'],
+            ),
+            confidence: data['confidence'] as double,
+            description: data['description'] as String,
+            parameters: List<String>.from(
+              jsonDecode(data['parameters'] as String),
+            ),
+            context: Map<String, dynamic>.from(
+              jsonDecode(data['context'] as String),
+            ),
+            inferredAt: DateTime.fromMillisecondsSinceEpoch(
+              data['inferred_at'] as int,
+            ),
+            alternativeIntents:
+                (jsonDecode(data['alternative_intents'] as String)
+                        as List<String>)
+                    .map(
+                      (name) =>
+                          IntentType.values.firstWhere((t) => t.name == name),
+                    )
+                    .toList(),
+          ),
+        )
+        .toList();
   }
 
   /// Update topic memory
@@ -454,7 +557,7 @@ class PersistentMemoryService {
   }) async {
     final db = _memoryDatabase!;
     final now = DateTime.now();
-    
+
     // Check if topic already exists
     final existing = await db.query(
       _topicMemoryTable,
@@ -483,10 +586,11 @@ class PersistentMemoryService {
       final existingData = existing.first;
       final newDiscussionCount = (existingData['discussion_count'] as int) + 1;
       final currentInterestScore = existingData['interest_score'] as double;
-      
+
       // Calculate weighted average for interest score
-      final newInterestScore = (currentInterestScore * 0.7) + (interestScore * 0.3);
-      
+      final newInterestScore =
+          (currentInterestScore * 0.7) + (interestScore * 0.3);
+
       await db.update(
         _topicMemoryTable,
         {
@@ -504,7 +608,10 @@ class PersistentMemoryService {
   }
 
   /// Get topic memory for user
-  Future<List<Map<String, dynamic>>> getTopicMemory(String userId, {int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> getTopicMemory(
+    String userId, {
+    int limit = 20,
+  }) async {
     final db = _memoryDatabase!;
     final results = await db.query(
       _topicMemoryTable,
@@ -514,16 +621,26 @@ class PersistentMemoryService {
       limit: limit,
     );
 
-    return results.map((data) => {
-      'topic_name': data['topic_name'],
-      'first_discussed': DateTime.fromMillisecondsSinceEpoch(data['first_discussed'] as int),
-      'last_discussed': DateTime.fromMillisecondsSinceEpoch(data['last_discussed'] as int),
-      'discussion_count': data['discussion_count'],
-      'interest_score': data['interest_score'],
-      'expertise_level': data['expertise_level'],
-      'related_topics': List<String>.from(jsonDecode(data['related_topics'] as String)),
-      'context_notes': data['context_notes'],
-    }).toList();
+    return results
+        .map(
+          (data) => {
+            'topic_name': data['topic_name'],
+            'first_discussed': DateTime.fromMillisecondsSinceEpoch(
+              data['first_discussed'] as int,
+            ),
+            'last_discussed': DateTime.fromMillisecondsSinceEpoch(
+              data['last_discussed'] as int,
+            ),
+            'discussion_count': data['discussion_count'],
+            'interest_score': data['interest_score'],
+            'expertise_level': data['expertise_level'],
+            'related_topics': List<String>.from(
+              jsonDecode(data['related_topics'] as String),
+            ),
+            'context_notes': data['context_notes'],
+          },
+        )
+        .toList();
   }
 
   /// Store session continuity information
@@ -537,7 +654,7 @@ class PersistentMemoryService {
   }) async {
     final db = _memoryDatabase!;
     final now = DateTime.now();
-    
+
     final continuityMap = {
       'id': '${userId}_${currentSessionId}_${now.millisecondsSinceEpoch}',
       'user_id': userId,
@@ -553,7 +670,10 @@ class PersistentMemoryService {
   }
 
   /// Get session continuity information
-  Future<Map<String, dynamic>?> getSessionContinuity(String userId, String currentSessionId) async {
+  Future<Map<String, dynamic>?> getSessionContinuity(
+    String userId,
+    String currentSessionId,
+  ) async {
     final db = _memoryDatabase!;
     final results = await db.query(
       _sessionContinuityTable,
@@ -571,7 +691,9 @@ class PersistentMemoryService {
       'continuity_type': data['continuity_type'],
       'continuity_score': data['continuity_score'],
       'context_bridge': data['context_bridge'],
-      'created_at': DateTime.fromMillisecondsSinceEpoch(data['created_at'] as int),
+      'created_at': DateTime.fromMillisecondsSinceEpoch(
+        data['created_at'] as int,
+      ),
     };
   }
 
@@ -579,7 +701,7 @@ class PersistentMemoryService {
   Future<void> cleanupExpiredMemory() async {
     final db = _memoryDatabase!;
     final now = DateTime.now().millisecondsSinceEpoch;
-    
+
     await db.delete(
       _contextMemoryTable,
       where: 'expires_at IS NOT NULL AND expires_at <= ?',
@@ -590,25 +712,25 @@ class PersistentMemoryService {
   /// Get comprehensive memory statistics
   Future<Map<String, dynamic>> getMemoryStatistics(String userId) async {
     final db = _memoryDatabase!;
-    
+
     final contextCountResult = await db.rawQuery(
       'SELECT COUNT(*) as count FROM $_contextMemoryTable WHERE user_id = ?',
       [userId],
     );
     final contextCount = contextCountResult.first['count'] as int? ?? 0;
-    
+
     final intentCountResult = await db.rawQuery(
       'SELECT COUNT(*) as count FROM $_intentHistoryTable WHERE user_id = ?',
       [userId],
     );
     final intentCount = intentCountResult.first['count'] as int? ?? 0;
-    
+
     final topicCountResult = await db.rawQuery(
       'SELECT COUNT(*) as count FROM $_topicMemoryTable WHERE user_id = ?',
       [userId],
     );
     final topicCount = topicCountResult.first['count'] as int? ?? 0;
-    
+
     final behaviorCountResult = await db.rawQuery(
       'SELECT COUNT(*) as count FROM $_behaviorPatternsTable WHERE user_id = ?',
       [userId],
@@ -620,21 +742,39 @@ class PersistentMemoryService {
       'total_intents_tracked': intentCount,
       'total_topics_discussed': topicCount,
       'total_behavior_patterns': behaviorCount,
-      'memory_health_score': _calculateMemoryHealthScore(contextCount, intentCount, topicCount, behaviorCount),
+      'memory_health_score': _calculateMemoryHealthScore(
+        contextCount,
+        intentCount,
+        topicCount,
+        behaviorCount,
+      ),
     };
   }
 
-  double _calculateMemoryHealthScore(int contextCount, int intentCount, int topicCount, int behaviorCount) {
+  double _calculateMemoryHealthScore(
+    int contextCount,
+    int intentCount,
+    int topicCount,
+    int behaviorCount,
+  ) {
     // Simple scoring algorithm - can be enhanced based on requirements
     final totalItems = contextCount + intentCount + topicCount + behaviorCount;
     if (totalItems == 0) return 0.0;
-    
-    final diversity = [contextCount, intentCount, topicCount, behaviorCount]
-        .where((count) => count > 0)
-        .length / 4.0;
-    
-    final richness = (totalItems / 100.0).clamp(0.0, 1.0); // Scale based on 100 items
-    
+
+    final diversity =
+        [
+          contextCount,
+          intentCount,
+          topicCount,
+          behaviorCount,
+        ].where((count) => count > 0).length /
+        4.0;
+
+    final richness = (totalItems / 100.0).clamp(
+      0.0,
+      1.0,
+    ); // Scale based on 100 items
+
     return (diversity * 0.6 + richness * 0.4).clamp(0.0, 1.0);
   }
 }

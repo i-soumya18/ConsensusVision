@@ -7,13 +7,19 @@ enum AppThemeMode { light, dark, system }
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'app_theme_mode';
   static const String _primaryColorKey = 'primary_color';
+  static const String _userBubbleColorKey = 'user_bubble_color';
+  static const String _aiBubbleColorKey = 'ai_bubble_color';
 
   AppThemeMode _themeMode = AppThemeMode.system;
   Color _primaryColor = const Color(0xFF2563EB);
+  Color _userBubbleColor = const Color(0xFF25D366); // WhatsApp green
+  Color _aiBubbleColor = const Color(0xFFFFFFFF); // White
   bool _systemIsDark = false;
 
   AppThemeMode get themeMode => _themeMode;
   Color get primaryColor => _primaryColor;
+  Color get userBubbleColor => _userBubbleColor;
+  Color get aiBubbleColor => _aiBubbleColor;
   bool get isDarkMode {
     switch (_themeMode) {
       case AppThemeMode.light:
@@ -130,6 +136,16 @@ class ThemeService extends ChangeNotifier {
       _primaryColor = Color(colorValue);
     }
 
+    final userBubbleColorValue = prefs.getInt(_userBubbleColorKey);
+    if (userBubbleColorValue != null) {
+      _userBubbleColor = Color(userBubbleColorValue);
+    }
+
+    final aiBubbleColorValue = prefs.getInt(_aiBubbleColorKey);
+    if (aiBubbleColorValue != null) {
+      _aiBubbleColor = Color(aiBubbleColorValue);
+    }
+
     // Listen to system theme changes
     WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged =
         () {
@@ -158,5 +174,21 @@ class ThemeService extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_primaryColorKey, color.value);
+  }
+
+  Future<void> setUserBubbleColor(Color color) async {
+    _userBubbleColor = color;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_userBubbleColorKey, color.value);
+  }
+
+  Future<void> setAiBubbleColor(Color color) async {
+    _aiBubbleColor = color;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_aiBubbleColorKey, color.value);
   }
 }

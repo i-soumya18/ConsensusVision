@@ -283,7 +283,7 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'ImageQuery',
+                        'Lumini',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: titleFontSize,

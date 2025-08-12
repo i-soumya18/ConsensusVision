@@ -3,10 +3,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/message.dart';
-import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import 'image_preview_widget.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -33,354 +31,110 @@ class MessageBubble extends StatelessWidget {
         final isSending = message.status == MessageStatus.sending;
 
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: isUser
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
+          margin: EdgeInsets.only(
+            left: isUser ? MediaQuery.of(context).size.width * 0.15 : 16,
+            right: isUser ? 16 : MediaQuery.of(context).size.width * 0.15,
+            top: 3,
+            bottom: 3,
+          ),
+          child: Column(
+            crossAxisAlignment: isUser 
+              ? CrossAxisAlignment.end 
+              : CrossAxisAlignment.start,
             children: [
-              if (!isUser) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: themeService.primaryColor,
-                  child: Icon(Icons.smart_toy, size: 18, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
+              // Message bubble
+              GestureDetector(
+                onLongPress: () => _showMessageActions(context),
                 child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.75,
-                  ),
-                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isUser
-                        ? themeService.primaryColor
-                        : isError
-                        ? AppTheme.errorColor.withOpacity(0.1)
-                        : AppTheme.aiMessageColor,
-                    borderRadius: BorderRadius.circular(18).copyWith(
-                      bottomLeft: isUser ? null : const Radius.circular(4),
-                      bottomRight: isUser ? const Radius.circular(4) : null,
-                    ),
-                    border: isError
-                        ? Border.all(color: AppTheme.errorColor, width: 1)
-                        : null,
+                    color: _getBubbleColor(isUser, isError, themeService),
+                    borderRadius: _getBorderRadius(isUser),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isUser 
+                          ? Colors.black.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.06),
+                        blurRadius: isUser ? 8 : 6,
+                        offset: Offset(0, isUser ? 2 : 1),
+                      ),
+                    ],
+                    // Add border for AI messages to better define them
+                    border: !isUser && !isError ? Border.all(
+                      color: Colors.grey.shade200,
+                      width: 0.5,
+                    ) : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Images if present
-                      if (message.imagePaths.isNotEmpty) ...[
-                        ImagePreviewWidget(imagePaths: message.imagePaths),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Message content with enhanced loading animation
-                      if (isSending)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                      // Message content
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: message.imagePaths.isNotEmpty ? 10 : 12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: 150,
-                              child: AnimatedTextKit(
-                                animatedTexts: [
-                                  TypewriterAnimatedText(
-                                    message.content.isNotEmpty
-                                        ? message.content
-                                        : 'Thinking...',
-                                    textStyle: TextStyle(
-                                      color: isUser
-                                          ? Colors.white
-                                          : AppTheme.onSurfaceColor,
-                                      fontSize: 16,
-                                    ),
-                                    speed: const Duration(milliseconds: 80),
-                                  ),
-                                ],
-                                repeatForever: true,
-                                pause: const Duration(milliseconds: 1000),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  themeService.primaryColor.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        // Use markdown rendering for AI responses, SelectableText for user messages
-                        isUser
-                            ? SelectableText(
-                                message.content,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              )
-                            : _buildMarkdownContent(
-                                message.content,
-                                themeService,
-                              ),
-
-                      const SizedBox(height: 4),
-
-                      // Message metadata with enhanced contextual indicators
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            DateFormat('HH:mm').format(message.timestamp),
-                            style: TextStyle(
-                              color:
-                                  (isUser
-                                          ? Colors.white
-                                          : AppTheme.onSurfaceColor)
-                                      .withOpacity(0.7),
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          // Show context indicator for AI responses that reference previous conversation
-                          if (!isUser &&
-                              _isContextualResponse(message.content)) ...[
-                            const SizedBox(width: 6),
-                            Tooltip(
-                              message: 'Response uses conversation context',
-                              child: Icon(
-                                Icons.chat_bubble_outline,
-                                size: 12,
-                                color: themeService.primaryColor.withOpacity(
-                                  0.7,
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          if (!isUser && message.aiModel != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: themeService.primaryColor.withOpacity(
-                                  0.2,
-                                ),
+                            // Images if present
+                            if (message.imagePaths.isNotEmpty) ...[
+                              ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                message.aiModel!.split(' ').first,
-                                style: TextStyle(
-                                  color: themeService.primaryColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
+                                child: ImagePreviewWidget(
+                                  imagePaths: message.imagePaths,
                                 ),
                               ),
-                            ),
-                          ],
-                          if (message.confidence != null &&
-                              message.confidence! > 0) ...[
-                            const SizedBox(width: 4),
-                            Tooltip(
-                              message:
-                                  'Confidence: ${(message.confidence! * 100).toStringAsFixed(0)}%',
-                              child: Icon(
-                                Icons.verified,
-                                size: 12,
-                                color: _getConfidenceColor(
-                                  message.confidence!,
-                                  themeService,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (isError) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: onRetry,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.errorColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Retry',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                              if (message.content.isNotEmpty)
+                                const SizedBox(height: 8),
+                            ],
 
-                      // Action buttons for user messages (edit) and AI messages (share, read aloud)
-                      if (!isSending &&
-                          (onEdit != null ||
-                              onShare != null ||
-                              onReadAloud != null)) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Edit button for user messages
-                            if (isUser && onEdit != null)
-                              GestureDetector(
-                                onTap: onEdit,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.edit,
-                                        size: 14,
-                                        color: Colors.white.withOpacity(0.9),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Edit',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.9),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                            // Share button for AI messages
-                            if (!isUser && onShare != null)
-                              GestureDetector(
-                                onTap: onShare,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: themeService.primaryColor
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: themeService.primaryColor
-                                          .withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.share,
-                                        size: 14,
-                                        color: themeService.primaryColor,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Share',
-                                        style: TextStyle(
-                                          color: themeService.primaryColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                            // Add spacing between buttons for AI messages
-                            if (!isUser &&
-                                onShare != null &&
-                                onReadAloud != null)
-                              const SizedBox(width: 8),
-
-                            // Read Aloud button for AI messages
-                            if (!isUser && onReadAloud != null)
-                              GestureDetector(
-                                onTap: onReadAloud,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: themeService.primaryColor
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: themeService.primaryColor
-                                          .withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.volume_up,
-                                        size: 14,
-                                        color: themeService.primaryColor,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Read',
-                                        style: TextStyle(
-                                          color: themeService.primaryColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                            // Text content
+                            if (message.content.isNotEmpty)
+                              _buildMessageContent(
+                                isUser, 
+                                isSending, 
+                                themeService
                               ),
                           ],
                         ),
-                      ],
+                      ),
+
+                      // Message metadata
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 14, 
+                          right: 14, 
+                          bottom: 10,
+                        ),
+                        child: _buildMessageMetadata(
+                          isUser, 
+                          isError, 
+                          isSending, 
+                          themeService
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-              if (isUser) ...[
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: themeService.primaryColor,
-                  child: Icon(Icons.person, size: 18, color: Colors.white),
+
+              // Timestamp (outside bubble, WhatsApp style)
+              if (!isSending)
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: 4,
+                    left: isUser ? 0 : 12,
+                    right: isUser ? 12 : 0,
+                  ),
+                  child: Text(
+                    DateFormat('HH:mm').format(message.timestamp),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ),
-              ],
             ],
           ),
         );
@@ -388,131 +142,380 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Color _getConfidenceColor(double confidence, ThemeService themeService) {
-    if (confidence >= 0.8) return AppTheme.successColor;
-    if (confidence >= 0.6) return Colors.orange;
-    return AppTheme.errorColor;
+  Color _getBubbleColor(bool isUser, bool isError, ThemeService themeService) {
+    if (isError) {
+      return Colors.red.shade50;
+    }
+    if (isUser) {
+      // Use user-selected bubble color
+      return themeService.userBubbleColor;
+    }
+    // Use user-selected AI bubble color  
+    return themeService.aiBubbleColor;
   }
 
-  Widget _buildMarkdownContent(String content, ThemeService themeService) {
+  Color _getTextColor(bool isUser, ThemeService themeService) {
+    if (isUser) {
+      // Calculate contrast color for user bubble
+      final bubbleColor = themeService.userBubbleColor;
+      return _getContrastColor(bubbleColor);
+    }
+    // Calculate contrast color for AI bubble
+    final bubbleColor = themeService.aiBubbleColor;
+    return _getContrastColor(bubbleColor);
+  }
+
+  Color _getContrastColor(Color backgroundColor) {
+    // Calculate luminance to determine if we need dark or light text
+    final luminance = backgroundColor.computeLuminance();
+    return luminance > 0.5 ? Colors.black87 : Colors.white;
+  }
+
+  BorderRadius _getBorderRadius(bool isUser) {
+    return BorderRadius.only(
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
+      bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
+    );
+  }
+
+  Widget _buildMessageContent(bool isUser, bool isSending, ThemeService themeService) {
+    if (isSending) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              message.content.isNotEmpty ? message.content : 'Sending...',
+              style: TextStyle(
+                color: _getTextColor(isUser, themeService),
+                fontSize: 16,
+                height: 1.4,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isUser ? _getTextColor(isUser, themeService).withOpacity(0.8) : themeService.primaryColor,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (isUser) {
+      return SelectableText(
+        message.content,
+        style: TextStyle(
+          color: _getTextColor(isUser, themeService),
+          fontSize: 16,
+          height: 1.4,
+          fontWeight: FontWeight.w400,
+        ),
+      );
+    } else {
+      return _buildMarkdownContent(message.content, themeService, false);
+    }
+  }
+
+  Widget _buildMessageMetadata(bool isUser, bool isError, bool isSending, ThemeService themeService) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // AI Model indicator
+        if (!isUser && message.aiModel != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: themeService.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              message.aiModel!.split(' ').first.toUpperCase(),
+              style: TextStyle(
+                color: themeService.primaryColor,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+
+        // Confidence indicator
+        if (!isUser && message.confidence != null && message.confidence! > 0) ...[
+          Icon(
+            _getConfidenceIcon(message.confidence!),
+            size: 12,
+            color: _getConfidenceColor(message.confidence!),
+          ),
+          const SizedBox(width: 6),
+        ],
+
+        // Context indicator
+        if (!isUser && _isContextualResponse(message.content)) ...[
+          Icon(
+            Icons.link,
+            size: 12,
+            color: themeService.primaryColor.withOpacity(0.6),
+          ),
+          const SizedBox(width: 6),
+        ],
+
+        const Spacer(),
+
+        // Error retry button
+        if (isError && onRetry != null)
+          GestureDetector(
+            onTap: onRetry,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+
+        // Message status for user messages (WhatsApp-style)
+        if (isUser && !isSending) ...[
+          const Spacer(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Double check mark for sent messages
+              Icon(
+                message.status == MessageStatus.sent 
+                  ? Icons.done_all 
+                  : Icons.done,
+                size: 16,
+                color: message.status == MessageStatus.sent
+                  ? Colors.blue.shade300 // Read receipt color
+                  : _getTextColor(isUser, themeService).withOpacity(0.8), // Sent color
+              ),
+            ],
+          ),
+        ] else if (isUser) ...[
+          const Spacer(),
+          // Clock icon for sending messages
+          Icon(
+            Icons.schedule,
+            size: 14,
+            color: _getTextColor(isUser, themeService).withOpacity(0.8),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMarkdownContent(String content, ThemeService themeService, bool isUser) {
+    final textColor = _getTextColor(isUser, themeService);
+    final isDarkBackground = textColor == Colors.white;
+    
     return Container(
       constraints: const BoxConstraints(minHeight: 0),
       child: MarkdownBody(
         data: content,
         selectable: true,
         styleSheet: MarkdownStyleSheet(
-          // Text styles
+          // Base text style with dynamic color
           p: TextStyle(
-            color: AppTheme.onSurfaceColor,
+            color: textColor,
             fontSize: 16,
             height: 1.4,
           ),
+          
+          // Headers with dynamic color
           h1: TextStyle(
-            color: AppTheme.onSurfaceColor,
-            fontSize: 24,
+            color: textColor,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             height: 1.3,
           ),
           h2: TextStyle(
-            color: AppTheme.onSurfaceColor,
+            color: textColor,
             fontSize: 20,
             fontWeight: FontWeight.bold,
             height: 1.3,
           ),
           h3: TextStyle(
-            color: AppTheme.onSurfaceColor,
+            color: textColor,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          ),
-          h4: TextStyle(
-            color: AppTheme.onSurfaceColor,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          ),
-          h5: TextStyle(
-            color: AppTheme.onSurfaceColor,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          ),
-          h6: TextStyle(
-            color: AppTheme.onSurfaceColor,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             height: 1.3,
           ),
 
-          // Code styles
+          // Code styling with adaptive colors
           code: TextStyle(
-            backgroundColor: themeService.primaryColor.withOpacity(0.1),
-            color: themeService.primaryColor,
+            backgroundColor: isDarkBackground ? Colors.grey.shade800 : Colors.grey.shade100,
+            color: isDarkBackground ? Colors.orange.shade300 : Colors.red.shade700,
             fontFamily: 'monospace',
             fontSize: 14,
           ),
           codeblockDecoration: BoxDecoration(
-            color: themeService.primaryColor.withOpacity(0.05),
+            color: isDarkBackground ? Colors.grey.shade800 : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: themeService.primaryColor.withOpacity(0.2),
+              color: isDarkBackground ? Colors.grey.shade600 : Colors.grey.shade300,
             ),
           ),
           codeblockPadding: const EdgeInsets.all(12),
 
-          // List styles
-          listBullet: TextStyle(color: themeService.primaryColor, fontSize: 16),
+          // Lists
+          listBullet: TextStyle(
+            color: themeService.primaryColor,
+            fontSize: 16,
+          ),
 
-          // Quote styles
+          // Quotes with adaptive colors
           blockquote: TextStyle(
-            color: AppTheme.onSurfaceColor.withOpacity(0.8),
+            color: isDarkBackground ? Colors.white70 : Colors.black54,
             fontStyle: FontStyle.italic,
             fontSize: 16,
           ),
           blockquoteDecoration: BoxDecoration(
-            color: themeService.primaryColor.withOpacity(0.05),
+            color: isDarkBackground ? Colors.grey.shade800 : Colors.grey.shade50,
             border: Border(
-              left: BorderSide(color: themeService.primaryColor, width: 4),
+              left: BorderSide(color: themeService.primaryColor, width: 3),
             ),
           ),
           blockquotePadding: const EdgeInsets.all(12),
 
-          // Link styles
+          // Links
           a: TextStyle(
             color: themeService.primaryColor,
             decoration: TextDecoration.underline,
           ),
 
-          // Table styles
-          tableHead: TextStyle(
-            color: AppTheme.onSurfaceColor,
-            fontWeight: FontWeight.bold,
-          ),
-          tableBody: TextStyle(color: AppTheme.onSurfaceColor),
-          tableBorder: TableBorder.all(
-            color: themeService.primaryColor.withOpacity(0.3),
-            width: 1,
-          ),
-
-          // Strong and emphasis
+          // Emphasis with dynamic colors
           strong: TextStyle(
-            color: AppTheme.onSurfaceColor,
+            color: textColor,
             fontWeight: FontWeight.bold,
           ),
           em: TextStyle(
-            color: AppTheme.onSurfaceColor,
+            color: textColor,
             fontStyle: FontStyle.italic,
           ),
         ),
-        onTapLink: (text, href, title) {
-          // Handle link taps here if needed
-          // You could use url_launcher package to open external links
-        },
       ),
     );
   }
 
-  // Check if the AI response shows contextual awareness
+  void _showMessageActions(BuildContext context) {
+    final isUser = message.type == MessageType.user;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Actions
+              if (isUser && onEdit != null)
+                _buildActionTile(
+                  icon: Icons.edit,
+                  title: 'Edit Message',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onEdit!();
+                  },
+                ),
+
+              if (!isUser && onShare != null)
+                _buildActionTile(
+                  icon: Icons.share,
+                  title: 'Share Response',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onShare!();
+                  },
+                ),
+
+              if (!isUser && onReadAloud != null)
+                _buildActionTile(
+                  icon: Icons.volume_up,
+                  title: 'Read Aloud',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onReadAloud!();
+                  },
+                ),
+
+              _buildActionTile(
+                icon: Icons.copy,
+                title: 'Copy Text',
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement copy functionality
+                },
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
+    );
+  }
+
+  IconData _getConfidenceIcon(double confidence) {
+    if (confidence >= 0.8) return Icons.verified;
+    if (confidence >= 0.6) return Icons.check_circle_outline;
+    return Icons.help_outline;
+  }
+
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 0.8) return Colors.green;
+    if (confidence >= 0.6) return Colors.orange;
+    return Colors.red;
+  }
+
   bool _isContextualResponse(String content) {
     final contextualIndicators = [
       'as we discussed',

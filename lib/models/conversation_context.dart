@@ -54,7 +54,8 @@ class ConversationContext {
       currentIntent: currentIntent ?? this.currentIntent,
       referencedEntities: referencedEntities ?? this.referencedEntities,
       temporalContext: temporalContext ?? this.temporalContext,
-      contextContinuityScore: contextContinuityScore ?? this.contextContinuityScore,
+      contextContinuityScore:
+          contextContinuityScore ?? this.contextContinuityScore,
     );
   }
 }
@@ -115,24 +116,35 @@ class EnvironmentalContext {
   }
 
   static String _getDayOfWeek(DateTime time) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     return days[time.weekday - 1];
   }
 
-  static String _inferCurrentActivity(DateTime time, Duration? timeSinceLastSession) {
+  static String _inferCurrentActivity(
+    DateTime time,
+    Duration? timeSinceLastSession,
+  ) {
     final hour = time.hour;
     final isWeekend = time.weekday >= 6;
-    
+
     if (timeSinceLastSession != null && timeSinceLastSession.inMinutes < 5) {
       return 'continuation';
     }
-    
+
     if (isWeekend) {
       if (hour >= 9 && hour <= 12) return 'leisure_morning';
       if (hour >= 13 && hour <= 17) return 'leisure_afternoon';
       return 'leisure_other';
     }
-    
+
     if (hour >= 9 && hour <= 17) return 'work_hours';
     if (hour >= 18 && hour <= 22) return 'evening_personal';
     return 'off_hours';
@@ -275,7 +287,15 @@ extension IntentTypeExtension on IntentType {
   List<String> get typicalKeywords {
     switch (this) {
       case IntentType.imageAnalysis:
-        return ['analyze', 'image', 'picture', 'photo', 'visual', 'describe', 'identify'];
+        return [
+          'analyze',
+          'image',
+          'picture',
+          'photo',
+          'visual',
+          'describe',
+          'identify',
+        ];
       case IntentType.questionAnswering:
         return ['what', 'how', 'why', 'when', 'where', 'who', 'which'];
       case IntentType.problemSolving:
@@ -291,7 +311,14 @@ extension IntentTypeExtension on IntentType {
       case IntentType.summarization:
         return ['summarize', 'summary', 'overview', 'brief', 'recap'];
       case IntentType.creative:
-        return ['create', 'design', 'brainstorm', 'idea', 'creative', 'imagine'];
+        return [
+          'create',
+          'design',
+          'brainstorm',
+          'idea',
+          'creative',
+          'imagine',
+        ];
       case IntentType.planning:
         return ['plan', 'organize', 'schedule', 'prepare', 'strategy'];
       case IntentType.information:

@@ -1118,6 +1118,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             onTap: () => _showColorPicker(themeService),
           ),
+          const Divider(),
+          ListTile(
+            leading: Icon(Icons.chat_bubble, color: AppTheme.primaryColor),
+            title: const Text('User Message Color'),
+            subtitle: const Text('Choose color for your messages'),
+            trailing: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: themeService.userBubbleColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+            ),
+            onTap: () => _showBubbleColorPicker(themeService, true),
+          ),
+          const Divider(),
+          ListTile(
+            leading: Icon(Icons.chat_bubble_outline, color: AppTheme.primaryColor),
+            title: const Text('AI Message Color'),
+            subtitle: const Text('Choose color for AI responses (light & dark options)'),
+            trailing: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: themeService.aiBubbleColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+            ),
+            onTap: () => _showBubbleColorPicker(themeService, false),
+          ),
         ],
       ),
     );
@@ -1388,6 +1420,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showBubbleColorPicker(ThemeService themeService, bool isUserBubble) {
+    final currentColor = isUserBubble ? themeService.userBubbleColor : themeService.aiBubbleColor;
+    final title = isUserBubble ? 'Choose User Message Color' : 'Choose AI Message Color';
+    
+    // Predefined colors for each bubble type
+    final List<Color> colors = isUserBubble ? [
+      const Color(0xFF25D366), // WhatsApp green
+      const Color(0xFF2563EB), // Blue
+      const Color(0xFF7C3AED), // Purple
+      const Color(0xFF059669), // Green
+      const Color(0xFFDC2626), // Red
+      const Color(0xFFEA580C), // Orange
+      const Color(0xFF0891B2), // Teal
+      const Color(0xFFDB2777), // Pink
+    ] : [
+      // Light colors (dark text)
+      const Color(0xFFFFFFFF), // White
+      const Color(0xFFF8F9FA), // Light gray
+      const Color(0xFFE3F2FD), // Light blue
+      const Color(0xFFF3E5F5), // Light purple
+      const Color(0xFFE8F5E8), // Light green
+      const Color(0xFFFFF3E0), // Light orange
+      const Color(0xFFE0F2F1), // Light teal
+      const Color(0xFFFCE4EC), // Light pink
+      // Dark colors (light text)
+      const Color(0xFF1E1E1E), // Dark gray
+      const Color(0xFF2D3748), // Dark blue-gray
+      const Color(0xFF1A202C), // Dark charcoal
+      const Color(0xFF2A4365), // Dark blue
+      const Color(0xFF553C9A), // Dark purple
+      const Color(0xFF1F4B3F), // Dark green
+      const Color(0xFF744210), // Dark orange
+      const Color(0xFF065F46), // Dark teal
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isUserBubble 
+                  ? 'Choose a color for your messages'
+                  : 'Choose a color for AI responses\n(Light colors with dark text, Dark colors with light text)',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: colors.map((color) => GestureDetector(
+                  onTap: () {
+                    if (isUserBubble) {
+                      themeService.setUserBubbleColor(color);
+                    } else {
+                      themeService.setAiBubbleColor(color);
+                    }
+                    Navigator.pop(context);
+                    _showSnackBar(isUserBubble 
+                      ? '💬 User message color updated' 
+                      : '🤖 AI message color updated');
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: currentColor == color
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black
+                            : Colors.grey.shade300,
+                        width: currentColor == color ? 3 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: currentColor == color
+                        ? Icon(
+                            Icons.check, 
+                            color: color.computeLuminance() > 0.5 
+                              ? Colors.black 
+                              : Colors.white, 
+                            size: 24
+                          )
+                        : null,
+                  ),
+                )).toList(),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showClearHistoryDialog() {
     showDialog(
       context: context,
@@ -1416,7 +1563,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _clearChatHistory() async {
     try {
-      final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
+      final chatProvider = Provider.of<ContextAwareChatProvider>(
+        context,
+        listen: false,
+      );
       await chatProvider.clearAllChatSessions();
       _showSnackBar('Chat history cleared');
     } catch (e) {

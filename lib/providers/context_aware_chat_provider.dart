@@ -20,9 +20,12 @@ import '../services/context_management_service.dart';
 /// Enhanced chat provider with true context awareness and memory capabilities
 /// Integrates persistent memory, situational awareness, and intent prediction
 class ContextAwareChatProvider extends ChangeNotifier {
-  final PersistentMemoryService _memoryService = PersistentMemoryService.instance;
-  final SituationalAwarenessService _awarenessService = SituationalAwarenessService.instance;
-  final IntentPredictionService _intentService = IntentPredictionService.instance;
+  final PersistentMemoryService _memoryService =
+      PersistentMemoryService.instance;
+  final SituationalAwarenessService _awarenessService =
+      SituationalAwarenessService.instance;
+  final IntentPredictionService _intentService =
+      IntentPredictionService.instance;
   late EmotionalMemoryService _emotionalMemoryService;
   final AIEvaluationService _aiEvaluationService;
   final Uuid _uuid = const Uuid();
@@ -100,7 +103,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
       _isInitialized = true;
 
       if (kDebugMode) {
-        print('Context-Aware Chat Provider initialized for user: $_currentUserId');
+        print(
+          'Context-Aware Chat Provider initialized for user: $_currentUserId',
+        );
       }
 
       notifyListeners();
@@ -123,7 +128,8 @@ class ContextAwareChatProvider extends ChangeNotifier {
       if (_currentUser == null) {
         // Create new user profile with device information
         final deviceInfo = _awarenessService.currentDeviceInfo;
-        final environmentalContext = _awarenessService.currentEnvironmentalContext;
+        final environmentalContext =
+            _awarenessService.currentEnvironmentalContext;
 
         _currentUser = UserProfile(
           id: _currentUserId!,
@@ -131,15 +137,17 @@ class ContextAwareChatProvider extends ChangeNotifier {
           createdAt: DateTime.now(),
           lastActive: DateTime.now(),
           preferences: UserPreferences.defaultPreferences,
-          deviceInfo: deviceInfo ?? DeviceInfo(
-            platform: 'unknown',
-            deviceModel: 'unknown',
-            osVersion: 'unknown',
-            appVersion: '1.0.0',
-            capabilities: [],
-            specifications: {},
-            lastUpdated: DateTime.now(),
-          ),
+          deviceInfo:
+              deviceInfo ??
+              DeviceInfo(
+                platform: 'unknown',
+                deviceModel: 'unknown',
+                osVersion: 'unknown',
+                appVersion: '1.0.0',
+                capabilities: [],
+                specifications: {},
+                lastUpdated: DateTime.now(),
+              ),
           behaviorPatterns: [],
           contextMemory: {},
           frequentTopics: [],
@@ -210,7 +218,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
   String _generateContextualSessionTitle() {
     final greeting = _awarenessService.getContextualGreeting();
     final now = DateTime.now();
-    
+
     if (greeting.contains('morning')) {
       return 'Morning Session - ${_formatDate(now)}';
     } else if (greeting.contains('afternoon')) {
@@ -220,7 +228,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
     } else if (greeting.contains('night')) {
       return 'Night Session - ${_formatDate(now)}';
     }
-    
+
     return 'Chat Session - ${_formatDate(now)}';
   }
 
@@ -259,23 +267,25 @@ class ContextAwareChatProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _currentSession = await DatabaseService.getChatSession(sessionId);
-      
+
       if (_currentSession != null) {
-        _currentMessages = await DatabaseService.getMessagesForSession(sessionId);
-        
+        _currentMessages = await DatabaseService.getMessagesForSession(
+          sessionId,
+        );
+
         // Load conversation context
         await _loadConversationContext(sessionId);
-        
+
         // Check for session continuity
         await _checkSessionContinuity(sessionId);
-        
+
         // Update topic memory based on conversation
         await _updateTopicMemoryFromSession();
       } else {
         _currentMessages = [];
         _currentContext = null;
       }
-      
+
       notifyListeners();
     } catch (e) {
       _setError('Failed to switch chat session: $e');
@@ -309,7 +319,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
       final previousSession = sessions.first;
 
       // Calculate continuity score based on time gap and topic similarity
-      final timeDifference = DateTime.now().difference(previousSession.lastUpdated);
+      final timeDifference = DateTime.now().difference(
+        previousSession.lastUpdated,
+      );
       double continuityScore = 0.0;
 
       if (timeDifference.inMinutes < 30) {
@@ -333,7 +345,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
       );
 
       if (kDebugMode) {
-        print('Session continuity established: ${continuityScore.toStringAsFixed(2)}');
+        print(
+          'Session continuity established: ${continuityScore.toStringAsFixed(2)}',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -351,7 +365,10 @@ class ContextAwareChatProvider extends ChangeNotifier {
     return 'long_term_return';
   }
 
-  String _generateContextBridge(ChatSession previousSession, Duration timeDifference) {
+  String _generateContextBridge(
+    ChatSession previousSession,
+    Duration timeDifference,
+  ) {
     if (timeDifference.inMinutes < 30) {
       return 'Continuing from recent conversation in "${previousSession.title}"';
     } else if (timeDifference.inHours < 2) {
@@ -369,7 +386,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
     try {
       final topics = _extractTopicsFromMessages(_currentMessages);
-      
+
       for (final topic in topics) {
         await _memoryService.updateTopicMemory(
           userId: _currentUserId!,
@@ -386,23 +403,24 @@ class ContextAwareChatProvider extends ChangeNotifier {
   }
 
   /// Extract topics from conversation messages
-  List<Map<String, dynamic>> _extractTopicsFromMessages(List<Message> messages) {
+  List<Map<String, dynamic>> _extractTopicsFromMessages(
+    List<Message> messages,
+  ) {
     final Map<String, double> topicScores = {};
     final Map<String, List<String>> relatedTopics = {};
 
     for (final message in messages) {
       final content = message.content.toLowerCase();
-      
+
       // Extract potential topics using simple keyword analysis
       final words = content.split(RegExp(r'\W+'));
-      final filteredWords = words.where((word) => 
-          word.length > 4 && 
-          !_isCommonWord(word)
-      ).toList();
+      final filteredWords = words
+          .where((word) => word.length > 4 && !_isCommonWord(word))
+          .toList();
 
       for (final word in filteredWords) {
         topicScores[word] = (topicScores[word] ?? 0.0) + 1.0;
-        
+
         // Track related words in the same message
         relatedTopics[word] = (relatedTopics[word] ?? [])
           ..addAll(filteredWords.where((w) => w != word).take(3));
@@ -411,21 +429,53 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
     // Convert to list of topic objects
     return topicScores.entries
-        .where((entry) => entry.value >= 2) // Only topics mentioned multiple times
-        .map((entry) => {
-          'name': entry.key,
-          'interest': (entry.value / messages.length).clamp(0.0, 1.0),
-          'related': relatedTopics[entry.key]?.toSet().toList() ?? [],
-        })
+        .where(
+          (entry) => entry.value >= 2,
+        ) // Only topics mentioned multiple times
+        .map(
+          (entry) => {
+            'name': entry.key,
+            'interest': (entry.value / messages.length).clamp(0.0, 1.0),
+            'related': relatedTopics[entry.key]?.toSet().toList() ?? [],
+          },
+        )
         .toList();
   }
 
   bool _isCommonWord(String word) {
     const commonWords = {
-      'that', 'this', 'with', 'have', 'will', 'from', 'they', 'know',
-      'want', 'been', 'good', 'much', 'some', 'time', 'very', 'when',
-      'come', 'here', 'just', 'like', 'long', 'make', 'many', 'over',
-      'such', 'take', 'than', 'them', 'well', 'were', 'what', 'your',
+      'that',
+      'this',
+      'with',
+      'have',
+      'will',
+      'from',
+      'they',
+      'know',
+      'want',
+      'been',
+      'good',
+      'much',
+      'some',
+      'time',
+      'very',
+      'when',
+      'come',
+      'here',
+      'just',
+      'like',
+      'long',
+      'make',
+      'many',
+      'over',
+      'such',
+      'take',
+      'than',
+      'them',
+      'well',
+      'were',
+      'what',
+      'your',
     };
     return commonWords.contains(word);
   }
@@ -530,11 +580,12 @@ class ContextAwareChatProvider extends ChangeNotifier {
       final conversationHistory = _buildEnhancedConversationHistory();
 
       // Get AI response using the existing AI evaluation service
-      final evaluationResult = await _aiEvaluationService.processQueryWithUserPreference(
-        query: content,
-        images: images,
-        conversationHistory: conversationHistory,
-      );
+      final evaluationResult = await _aiEvaluationService
+          .processQueryWithUserPreference(
+            query: content,
+            images: images,
+            conversationHistory: conversationHistory,
+          );
 
       // Convert evaluation result to AI response format
       final aiResponse = evaluationResult.bestResponse;
@@ -560,7 +611,6 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
       // Store behavior patterns
       await _analyzeBehaviorPatterns(userMessage, predictedIntent);
-
     } catch (e) {
       _setError('Failed to send message: $e');
       if (kDebugMode) {
@@ -635,10 +685,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
       _currentMessages = messagesToKeep;
 
       // Send the edited message
-      await sendMessage(
-        content: newContent,
-        images: newImages,
-      );
+      await sendMessage(content: newContent, images: newImages);
     } catch (e) {
       _setError('Failed to edit message: $e');
     } finally {
@@ -663,8 +710,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
               '\nConfidence: ${(message.confidence! * 100).toStringAsFixed(0)}%';
         }
 
-        shareContent +=
-            '\nTimestamp: ${message.timestamp.toString()}';
+        shareContent += '\nTimestamp: ${message.timestamp.toString()}';
         shareContent += '\n\nShared from ImageQuery AI';
       } else {
         shareContent = message.content;
@@ -761,14 +807,20 @@ class ContextAwareChatProvider extends ChangeNotifier {
     }
 
     // Basic logic - can be enhanced with more sophisticated algorithms
-    final recentMessages = _currentMessages.length > 5 
+    final recentMessages = _currentMessages.length > 5
         ? _currentMessages.sublist(_currentMessages.length - 5)
         : _currentMessages;
     if (recentMessages.isEmpty) return false;
 
     // Check for patterns that might indicate need for support
-    final userMessages = recentMessages.where((m) => m.type == MessageType.user);
-    return userMessages.any((m) => m.content.toLowerCase().contains(RegExp(r'\b(help|stuck|confused|frustrated|difficult|problem)\b')));
+    final userMessages = recentMessages.where(
+      (m) => m.type == MessageType.user,
+    );
+    return userMessages.any(
+      (m) => m.content.toLowerCase().contains(
+        RegExp(r'\b(help|stuck|confused|frustrated|difficult|problem)\b'),
+      ),
+    );
   }
 
   /// Clear all chat sessions
@@ -796,7 +848,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
       'is_supported': false,
       'version': '1.0.0',
       'features': ['basic_emotions', 'facial_landmarks'],
-      'status': 'placeholder_implementation'
+      'status': 'placeholder_implementation',
     };
   }
 
@@ -858,7 +910,6 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
       // Save updated context
       await _memoryService.saveConversationContext(_currentContext!);
-
     } catch (e) {
       if (kDebugMode) {
         print('Error updating conversation context: $e');
@@ -867,24 +918,32 @@ class ContextAwareChatProvider extends ChangeNotifier {
   }
 
   /// Extract active topics from conversation
-  List<String> _extractActiveTopics(List<Message> recentMessages, String newContent) {
+  List<String> _extractActiveTopics(
+    List<Message> recentMessages,
+    String newContent,
+  ) {
     final topics = <String>[];
-    final allContent = recentMessages.map((m) => m.content).join(' ') + ' ' + newContent;
-    
+    final allContent =
+        recentMessages.map((m) => m.content).join(' ') + ' ' + newContent;
+
     // Simple topic extraction based on keywords
-    if (allContent.toLowerCase().contains('image') || allContent.toLowerCase().contains('photo')) {
+    if (allContent.toLowerCase().contains('image') ||
+        allContent.toLowerCase().contains('photo')) {
       topics.add('image_analysis');
     }
-    if (allContent.toLowerCase().contains('problem') || allContent.toLowerCase().contains('error')) {
+    if (allContent.toLowerCase().contains('problem') ||
+        allContent.toLowerCase().contains('error')) {
       topics.add('problem_solving');
     }
-    if (allContent.toLowerCase().contains('learn') || allContent.toLowerCase().contains('understand')) {
+    if (allContent.toLowerCase().contains('learn') ||
+        allContent.toLowerCase().contains('understand')) {
       topics.add('learning');
     }
-    if (allContent.toLowerCase().contains('help') || allContent.toLowerCase().contains('assist')) {
+    if (allContent.toLowerCase().contains('help') ||
+        allContent.toLowerCase().contains('assist')) {
       topics.add('assistance');
     }
-    
+
     return topics;
   }
 
@@ -904,15 +963,17 @@ class ContextAwareChatProvider extends ChangeNotifier {
   List<String> _extractReferencedEntities(String content) {
     // Simple entity extraction - can be enhanced with NLP
     final entities = <String>[];
-    
+
     // Extract capitalized words that might be entities
     final words = content.split(RegExp(r'\W+'));
     for (final word in words) {
-      if (word.length > 2 && word[0].toUpperCase() == word[0] && word.toLowerCase() != word) {
+      if (word.length > 2 &&
+          word[0].toUpperCase() == word[0] &&
+          word.toLowerCase() != word) {
         entities.add(word);
       }
     }
-    
+
     return entities.take(5).toList(); // Limit to 5 entities
   }
 
@@ -922,17 +983,21 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
     final deviceInfo = _awarenessService.currentDeviceInfo;
     final environmentalContext = _awarenessService.currentEnvironmentalContext;
-    
+
     if (deviceInfo == null || environmentalContext == null) return content;
 
     // Add device context if relevant
-    if (content.toLowerCase().contains('device') || content.toLowerCase().contains('platform')) {
-      content += '\n\n[Context: I\'m using ${deviceInfo.platform} on ${deviceInfo.deviceModel}]';
+    if (content.toLowerCase().contains('device') ||
+        content.toLowerCase().contains('platform')) {
+      content +=
+          '\n\n[Context: I\'m using ${deviceInfo.platform} on ${deviceInfo.deviceModel}]';
     }
 
     // Add time context if relevant
-    if (content.toLowerCase().contains('time') || content.toLowerCase().contains('when')) {
-      content += '\n\n[Context: Current time context - ${environmentalContext.timeOfDay} on ${environmentalContext.dayOfWeek}]';
+    if (content.toLowerCase().contains('time') ||
+        content.toLowerCase().contains('when')) {
+      content +=
+          '\n\n[Context: Current time context - ${environmentalContext.timeOfDay} on ${environmentalContext.dayOfWeek}]';
     }
 
     return content;
@@ -962,17 +1027,23 @@ class ContextAwareChatProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _buildEnhancedConversationHistory() {
     if (!_enableContextAwareness) {
       // Fallback to basic context management
-      return ContextManagementService.getOptimalContextMessages(_currentMessages)
-          .map((msg) => {
-                'role': msg.type == MessageType.user ? 'user' : 'assistant',
-                'content': msg.content,
-                'images': msg.imagePaths,
-              })
+      return ContextManagementService.getOptimalContextMessages(
+            _currentMessages,
+          )
+          .map(
+            (msg) => {
+              'role': msg.type == MessageType.user ? 'user' : 'assistant',
+              'content': msg.content,
+              'images': msg.imagePaths,
+            },
+          )
           .toList();
     }
 
-    final optimalMessages = ContextManagementService.getOptimalContextMessages(_currentMessages);
-    
+    final optimalMessages = ContextManagementService.getOptimalContextMessages(
+      _currentMessages,
+    );
+
     return optimalMessages.map((msg) {
       final messageMap = {
         'role': msg.type == MessageType.user ? 'user' : 'assistant',
@@ -986,7 +1057,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
         messageMap['emotional_context'] = {
           'sentiment': msg.emotionalContext!.sentiment.name,
           'intensity': msg.emotionalContext!.intensity,
-          'emotions': msg.emotionalContext!.emotions.map((e) => e.name).toList(),
+          'emotions': msg.emotionalContext!.emotions
+              .map((e) => e.name)
+              .toList(),
         };
       }
 
@@ -1018,7 +1091,10 @@ class ContextAwareChatProvider extends ChangeNotifier {
   }
 
   /// Analyze and store behavior patterns
-  Future<void> _analyzeBehaviorPatterns(Message userMessage, UserIntent? predictedIntent) async {
+  Future<void> _analyzeBehaviorPatterns(
+    Message userMessage,
+    UserIntent? predictedIntent,
+  ) async {
     if (_currentUserId == null) return;
 
     try {
@@ -1039,7 +1115,6 @@ class ContextAwareChatProvider extends ChangeNotifier {
       if (predictedIntent != null) {
         await _analyzeIntentPattern(predictedIntent);
       }
-
     } catch (e) {
       if (kDebugMode) {
         print('Error analyzing behavior patterns: $e');
@@ -1049,8 +1124,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
   Future<void> _analyzeSessionTimingPattern() async {
     final now = DateTime.now();
-    final timeOfDay = _awarenessService.currentEnvironmentalContext?.timeOfDay ?? 'unknown';
-    
+    final timeOfDay =
+        _awarenessService.currentEnvironmentalContext?.timeOfDay ?? 'unknown';
+
     final pattern = BehaviorPattern(
       id: 'timing_${_currentUserId}_${now.millisecondsSinceEpoch}',
       type: BehaviorType.sessionTiming,
@@ -1061,7 +1137,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
       confidence: 0.7,
       metadata: {
         'time_of_day': timeOfDay,
-        'day_of_week': _awarenessService.currentEnvironmentalContext?.dayOfWeek ?? 'unknown',
+        'day_of_week':
+            _awarenessService.currentEnvironmentalContext?.dayOfWeek ??
+            'unknown',
         'session_id': _currentSession?.id,
       },
     );
@@ -1071,7 +1149,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
   Future<void> _analyzeQuestionPattern(Message message) async {
     final questionType = _classifyQuestion(message.content);
-    
+
     final pattern = BehaviorPattern(
       id: 'question_${_currentUserId}_${DateTime.now().millisecondsSinceEpoch}',
       type: BehaviorType.frequentQuestionPattern,
@@ -1142,7 +1220,9 @@ class ContextAwareChatProvider extends ChangeNotifier {
         'intent_type': intent.type.name,
         'confidence': intent.confidence,
         'parameters': intent.parameters,
-        'alternative_intents': intent.alternativeIntents.map((i) => i.name).toList(),
+        'alternative_intents': intent.alternativeIntents
+            .map((i) => i.name)
+            .toList(),
       },
     );
 
@@ -1181,7 +1261,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
   /// Get predicted next actions
   Future<List<Map<String, dynamic>>> getPredictedNextActions() async {
     if (!_enableIntentPrediction || _currentSession == null) return [];
-    
+
     return await _intentService.predictNextActions(
       sessionId: _currentSession!.id,
       conversationHistory: _currentMessages,
@@ -1220,6 +1300,30 @@ class ContextAwareChatProvider extends ChangeNotifier {
   void toggleEmotionalIntelligence(bool enabled) {
     _enableEmotionalIntelligence = enabled;
     notifyListeners();
+  }
+
+  /// Get the first user message content for a session to use as display title
+  Future<String?> getFirstUserMessageForSession(String sessionId) async {
+    try {
+      final messages = await DatabaseService.getMessagesForSession(sessionId);
+      final firstUserMessage = messages.firstWhere(
+        (message) => message.type == MessageType.user,
+        orElse: () => throw StateError('No user message found'),
+      );
+
+      // Truncate long messages for display
+      String content = firstUserMessage.content.trim();
+      if (content.length > 50) {
+        content = '${content.substring(0, 47)}...';
+      }
+
+      return content.isNotEmpty ? content : null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting first user message for session $sessionId: $e');
+      }
+      return null;
+    }
   }
 
   /// Utility methods

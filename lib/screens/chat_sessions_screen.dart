@@ -17,7 +17,10 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     super.initState();
     // Ensure sessions are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ContextAwareChatProvider>(context, listen: false).initialize();
+      Provider.of<ContextAwareChatProvider>(
+        context,
+        listen: false,
+      ).initialize();
     });
   }
 
@@ -88,7 +91,10 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     );
   }
 
-  Widget _buildSessionCard(ChatSession session, ContextAwareChatProvider chatProvider) {
+  Widget _buildSessionCard(
+    ChatSession session,
+    ContextAwareChatProvider chatProvider,
+  ) {
     final isActive = chatProvider.currentSession?.id == session.id;
 
     return Card(
@@ -112,14 +118,10 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
             size: 24,
           ),
         ),
-        title: Text(
-          session.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isActive ? Theme.of(context).colorScheme.primary : null,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: SessionTitleWidget(
+          session: session,
+          chatProvider: chatProvider,
+          isActive: isActive,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,13 +197,19 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
   }
 
   void _createNewChat() {
-    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(
+      context,
+      listen: false,
+    );
     chatProvider.createNewChatSession().then((_) {
       Navigator.pop(context);
     });
   }
 
-  void _selectSession(ChatSession session, ContextAwareChatProvider chatProvider) {
+  void _selectSession(
+    ChatSession session,
+    ContextAwareChatProvider chatProvider,
+  ) {
     chatProvider.switchToChatSession(session.id).then((_) {
       Navigator.pop(context);
     });
@@ -222,7 +230,10 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     }
   }
 
-  void _showRenameDialog(ChatSession session, ContextAwareChatProvider chatProvider) {
+  void _showRenameDialog(
+    ChatSession session,
+    ContextAwareChatProvider chatProvider,
+  ) {
     final TextEditingController controller = TextEditingController(
       text: session.title,
     );
@@ -259,7 +270,10 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     );
   }
 
-  void _showDeleteConfirmation(ChatSession session, ContextAwareChatProvider chatProvider) {
+  void _showDeleteConfirmation(
+    ChatSession session,
+    ContextAwareChatProvider chatProvider,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -284,6 +298,98 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Widget to display session title based on first user message
+class SessionTitleWidget extends StatefulWidget {
+  final ChatSession session;
+  final ContextAwareChatProvider chatProvider;
+  final bool isActive;
+
+  const SessionTitleWidget({
+    super.key,
+    required this.session,
+    required this.chatProvider,
+    required this.isActive,
+  });
+
+  @override
+  State<SessionTitleWidget> createState() => _SessionTitleWidgetState();
+}
+
+class _SessionTitleWidgetState extends State<SessionTitleWidget> {
+  String? _firstMessageContent;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFirstMessage();
+  }
+
+  Future<void> _loadFirstMessage() async {
+    try {
+      final firstMessage = await widget.chatProvider
+          .getFirstUserMessageForSession(widget.session.id);
+      if (mounted) {
+        setState(() {
+          _firstMessageContent = firstMessage;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _firstMessageContent = null;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return SizedBox(
+        height: 20,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: widget.isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Loading...',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: widget.isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Text(
+      _firstMessageContent ?? widget.session.title,
+      style: TextStyle(
+        fontWeight: FontWeight.w600,
+        color: widget.isActive ? Theme.of(context).colorScheme.primary : null,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

@@ -112,9 +112,12 @@ class UserPreferences {
       responseStyle: responseStyle ?? this.responseStyle,
       interests: interests ?? this.interests,
       personalizations: personalizations ?? this.personalizations,
-      enableContextualReminders: enableContextualReminders ?? this.enableContextualReminders,
-      enableIntentPrediction: enableIntentPrediction ?? this.enableIntentPrediction,
-      sessionTimeoutMinutes: sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
+      enableContextualReminders:
+          enableContextualReminders ?? this.enableContextualReminders,
+      enableIntentPrediction:
+          enableIntentPrediction ?? this.enableIntentPrediction,
+      sessionTimeoutMinutes:
+          sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
     );
   }
 }
