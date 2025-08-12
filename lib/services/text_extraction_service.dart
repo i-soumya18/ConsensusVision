@@ -77,7 +77,7 @@ class TextExtractionService {
       return '';
     } catch (e) {
       print('Error in Gemini text extraction: $e');
-      throw e;
+      rethrow;
     }
   }
 

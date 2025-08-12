@@ -186,7 +186,7 @@ class HuggingFaceService implements AIService {
     List<Map<String, dynamic>>? conversationHistory,
   ) async {
     // Get user preferences from ConfigService
-    final useAdvancedParams = await ConfigService.getUseAdvancedParameters();
+    final useAdvancedParams = ConfigService.getUseAdvancedParameters();
 
     if (!useAdvancedParams) {
       // Use optimal defaults when advanced parameters are disabled
@@ -201,9 +201,9 @@ class HuggingFaceService implements AIService {
     }
 
     // Use user-configured parameters when advanced mode is enabled
-    final temperature = await ConfigService.getTemperature();
-    final topP = await ConfigService.getTopP();
-    final maxTokens = await ConfigService.getMaxTokens();
+    final temperature = ConfigService.getTemperature();
+    final topP = ConfigService.getTopP();
+    final maxTokens = ConfigService.getMaxTokens();
 
     return {
       'max_length': maxTokens,

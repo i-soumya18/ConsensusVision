@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message.dart';
-import '../services/context_management_service.dart';
 import '../widgets/context_visualization_widget.dart';
-import '../theme/app_theme.dart';
 
 /// Demo screen to showcase context management capabilities
 class ContextManagementDemoScreen extends StatefulWidget {

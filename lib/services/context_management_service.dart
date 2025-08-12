@@ -76,13 +76,15 @@ class ContextManagementService {
     if (message.content.length > 150) return true;
 
     // Questions that establish conversation direction
-    if (message.content.contains('?') && message.type == MessageType.user)
+    if (message.content.contains('?') && message.type == MessageType.user) {
       return true;
+    }
 
     // AI responses with structured information
     if (message.type == MessageType.ai &&
-        _hasStructuredContent(message.content))
+        _hasStructuredContent(message.content)) {
       return true;
+    }
 
     // Messages with specific keywords indicating important context
     final importantKeywords = [
@@ -135,8 +137,9 @@ class ContextManagementService {
     for (final message in middleMessages.reversed.take(10)) {
       if (_isMessageRelevantToTopics(message, currentTopics)) {
         relevantMessages.insert(0, message); // Maintain chronological order
-        if (relevantMessages.length >= 3)
+        if (relevantMessages.length >= 3) {
           break; // Limit topic-relevant messages
+        }
       }
     }
 

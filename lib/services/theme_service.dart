@@ -33,10 +33,8 @@ class ThemeService extends ChangeNotifier {
           seedColor: _primaryColor,
           brightness: Brightness.light,
         ).copyWith(
-          background: Colors.white,
           surface: const Color(0xFFF8F9FA),
           onSurface: const Color(0xFF1A1A1A),
-          onBackground: const Color(0xFF1A1A1A),
         ),
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: AppBarTheme(
@@ -93,10 +91,8 @@ class ThemeService extends ChangeNotifier {
           seedColor: _primaryColor,
           brightness: Brightness.dark,
         ).copyWith(
-          background: const Color(0xFF121212),
           surface: const Color(0xFF1E1E1E),
           onSurface: const Color(0xFFE1E1E1),
-          onBackground: const Color(0xFFE1E1E1),
         ),
     scaffoldBackgroundColor: const Color(0xFF121212),
     appBarTheme: const AppBarTheme(

@@ -9,6 +9,7 @@ import '../services/database_service.dart';
 import '../services/ai_evaluation_service.dart';
 import '../services/prompt_library_service.dart';
 import '../services/context_management_service.dart';
+import '../services/text_to_speech_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final AIEvaluationService _aiEvaluationService;
@@ -440,6 +441,44 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  // Read message aloud using text-to-speech
+  Future<void> readMessageAloud(Message message) async {
+    try {
+      final ttsService = TextToSpeechService();
+
+      // Initialize TTS service if not already initialized
+      if (!ttsService.isInitialized) {
+        await ttsService.initialize();
+      }
+
+      // Use the message content for speech
+      String textToSpeak = message.content;
+
+      // For AI messages, optionally add some context
+      if (message.type == MessageType.ai && message.aiModel != null) {
+        // Optional: You can uncomment this line to announce the AI model
+        // textToSpeak = 'AI response from ${message.aiModel}: $textToSpeak';
+      }
+
+      // Check if text is too long and truncate if necessary
+      if (textToSpeak.length > 4096) {
+        textToSpeak =
+            '${textToSpeak.substring(0, 1000)}... Message truncated for speech.';
+      }
+
+      // Speak the text
+      await ttsService.speak(textToSpeak);
+    } catch (e) {
+      // Provide more specific error message
+      String errorMessage = 'Failed to read message aloud';
+      if (e.toString().contains('TTS not available')) {
+        errorMessage =
+            'Text-to-speech not available. Message copied to clipboard instead.';
+      }
+      _setError(errorMessage);
+    }
+  }
+
   // Build conversation history using advanced context management
   List<Map<String, dynamic>> _buildAdvancedConversationHistory() {
     final history = <Map<String, dynamic>>[];
@@ -729,8 +768,4 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

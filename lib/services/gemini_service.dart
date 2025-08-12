@@ -240,7 +240,7 @@ Please provide a comprehensive response that:
     List<Map<String, dynamic>>? conversationHistory,
   ) async {
     // Get user preferences from ConfigService
-    final useAdvancedParams = await ConfigService.getUseAdvancedParameters();
+    final useAdvancedParams = ConfigService.getUseAdvancedParameters();
 
     if (!useAdvancedParams) {
       // Use optimal defaults when advanced parameters are disabled
@@ -253,10 +253,10 @@ Please provide a comprehensive response that:
     }
 
     // Use user-configured parameters when advanced mode is enabled
-    final temperature = await ConfigService.getTemperature();
-    final topP = await ConfigService.getTopP();
-    final topK = await ConfigService.getTopK();
-    final maxTokens = await ConfigService.getMaxTokens();
+    final temperature = ConfigService.getTemperature();
+    final topP = ConfigService.getTopP();
+    final topK = ConfigService.getTopK();
+    final maxTokens = ConfigService.getMaxTokens();
 
     return {
       'temperature': temperature,

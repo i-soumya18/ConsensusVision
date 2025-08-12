@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onEdit;
   final VoidCallback? onShare;
+  final VoidCallback? onReadAloud;
 
   const MessageBubble({
     super.key,
@@ -21,6 +21,7 @@ class MessageBubble extends StatelessWidget {
     this.onRetry,
     this.onEdit,
     this.onShare,
+    this.onReadAloud,
   });
 
   @override
@@ -230,9 +231,11 @@ class MessageBubble extends StatelessWidget {
                         ],
                       ),
 
-                      // Action buttons for user messages (edit) and AI messages (share)
+                      // Action buttons for user messages (edit) and AI messages (share, read aloud)
                       if (!isSending &&
-                          (onEdit != null || onShare != null)) ...[
+                          (onEdit != null ||
+                              onShare != null ||
+                              onReadAloud != null)) ...[
                         const SizedBox(height: 8),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -306,6 +309,53 @@ class MessageBubble extends StatelessWidget {
                                       const SizedBox(width: 4),
                                       Text(
                                         'Share',
+                                        style: TextStyle(
+                                          color: themeService.primaryColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                            // Add spacing between buttons for AI messages
+                            if (!isUser &&
+                                onShare != null &&
+                                onReadAloud != null)
+                              const SizedBox(width: 8),
+
+                            // Read Aloud button for AI messages
+                            if (!isUser && onReadAloud != null)
+                              GestureDetector(
+                                onTap: onReadAloud,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: themeService.primaryColor
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: themeService.primaryColor
+                                          .withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.volume_up,
+                                        size: 14,
+                                        color: themeService.primaryColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Read',
                                         style: TextStyle(
                                           color: themeService.primaryColor,
                                           fontSize: 12,

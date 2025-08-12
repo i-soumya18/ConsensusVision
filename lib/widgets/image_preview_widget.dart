@@ -52,7 +52,7 @@ class ImagePreviewWidget extends StatelessWidget {
   }
 
   Widget _buildMultipleImages() {
-    return Container(
+    return SizedBox(
       height: maxHeight ?? 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,

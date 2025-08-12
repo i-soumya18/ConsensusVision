@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
@@ -276,6 +275,9 @@ class _ChatScreenState extends State<ChatScreen> {
           onShare: message.type == MessageType.ai
               ? () => _shareMessage(context, chatProvider, message)
               : null,
+          onReadAloud: message.type == MessageType.ai
+              ? () => _readMessageAloud(context, chatProvider, message)
+              : null,
         );
       },
     );
@@ -419,6 +421,34 @@ class _ChatScreenState extends State<ChatScreen> {
       const SnackBar(
         content: Text('Message copied to clipboard'),
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _readMessageAloud(
+    BuildContext context,
+    ChatProvider chatProvider,
+    Message message,
+  ) {
+    chatProvider.readMessageAloud(message);
+
+    // Show a snackbar to indicate the message is being read aloud
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.volume_up, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Reading AI response aloud...',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }

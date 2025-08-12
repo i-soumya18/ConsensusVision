@@ -34,7 +34,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   Color get surfaceColor => Theme.of(context).colorScheme.surface;
   Color get onSurfaceColor => Theme.of(context).colorScheme.onSurface;
 
-  List<File> _selectedImages = [];
+  final List<File> _selectedImages = [];
   String? _selectedPromptTemplate;
   late AnimationController _animationController;
   late AnimationController _promptAnimationController;
@@ -420,7 +420,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
   }
 
   Widget _buildSelectedImagesPreview() {
-    return Container(
+    return SizedBox(
       height: 80,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -1027,6 +1027,6 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       return primaryColor.withOpacity(0.03);
     }
 
-    return Theme.of(context).colorScheme.background;
+    return Theme.of(context).colorScheme.surface;
   }
 }
