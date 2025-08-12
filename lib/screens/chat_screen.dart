@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           // WhatsApp-inspired background pattern
           _buildWhatsAppBackground(context),
-          
+
           // Main chat content
           Consumer<ContextAwareChatProvider>(
             builder: (context, chatProvider, child) {
@@ -64,7 +64,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               // Show conversation context indicator for ongoing conversations
                               ConversationContextIndicator(
                                 messages: chatProvider.currentMessages,
-                                isVisible: chatProvider.currentMessages.length > 2,
+                                isVisible:
+                                    chatProvider.currentMessages.length > 2,
                               ),
 
                               // Messages list
@@ -96,12 +97,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildWhatsAppBackground(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? const Color(0xFF0D1418) // WhatsApp dark chat background
             : const Color(0xFFE5DDD5), // WhatsApp light chat background
       ),
@@ -112,9 +113,12 @@ class _ChatScreenState extends State<ChatScreen> {
             painter: WhatsAppBackgroundPainter(isDark: isDark),
             size: Size.infinite,
           ),
-          
+
           // Floating decorative elements
-          ...List.generate(6, (index) => _buildFloatingElement(context, index, isDark)),
+          ...List.generate(
+            6,
+            (index) => _buildFloatingElement(context, index, isDark),
+          ),
         ],
       ),
     );
@@ -123,18 +127,22 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildFloatingElement(BuildContext context, int index, bool isDark) {
     final screenSize = MediaQuery.of(context).size;
     final positions = [
-      [screenSize.height * 0.1, screenSize.width * 0.85, null], // top, left, right
+      [
+        screenSize.height * 0.1,
+        screenSize.width * 0.85,
+        null,
+      ], // top, left, right
       [screenSize.height * 0.25, null, screenSize.width * 0.9],
       [screenSize.height * 0.4, screenSize.width * 0.05, null],
       [screenSize.height * 0.6, null, screenSize.width * 0.05],
       [screenSize.height * 0.75, screenSize.width * 0.8, null],
       [screenSize.height * 0.9, null, screenSize.width * 0.1],
     ];
-    
+
     final position = positions[index];
     final sizes = [12.0, 8.0, 15.0, 10.0, 6.0, 9.0];
     final size = sizes[index];
-    
+
     return Positioned(
       top: position[0],
       left: position[1],
@@ -144,7 +152,7 @@ class _ChatScreenState extends State<ChatScreen> {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark 
+          color: isDark
               ? Colors.white.withOpacity(0.03)
               : Colors.black.withOpacity(0.04),
         ),
@@ -260,7 +268,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Container(
           decoration: BoxDecoration(
             // Semi-transparent overlay for better readability on patterned background
@@ -294,9 +302,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 24),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -318,7 +331,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 40),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -608,7 +623,7 @@ class _ChatScreenState extends State<ChatScreen> {
 /// WhatsApp-inspired background painter that creates subtle pattern elements
 class WhatsAppBackgroundPainter extends CustomPainter {
   final bool isDark;
-  
+
   WhatsAppBackgroundPainter({required this.isDark});
 
   @override
@@ -619,14 +634,14 @@ class WhatsAppBackgroundPainter extends CustomPainter {
 
     // Create subtle geometric pattern similar to WhatsApp
     _drawSubtlePattern(canvas, size, paint);
-    
+
     // Add very faint overlay texture
     _drawTextureOverlay(canvas, size, paint);
   }
 
   void _drawSubtlePattern(Canvas canvas, Size size, Paint paint) {
     // Very subtle pattern color
-    paint.color = isDark 
+    paint.color = isDark
         ? Colors.white.withOpacity(0.02)
         : Colors.black.withOpacity(0.03);
 
@@ -639,24 +654,24 @@ class WhatsAppBackgroundPainter extends CustomPainter {
         // Add slight randomization to avoid perfect grid
         final offsetX = x + (math.sin(y / 100) * 8);
         final offsetY = y + (math.cos(x / 100) * 8);
-        
-        canvas.drawCircle(
-          Offset(offsetX, offsetY),
-          dotRadius,
-          paint,
-        );
+
+        canvas.drawCircle(Offset(offsetX, offsetY), dotRadius, paint);
       }
     }
 
     // Add very faint diagonal lines for texture
     paint.strokeWidth = 0.5;
     paint.style = PaintingStyle.stroke;
-    paint.color = isDark 
+    paint.color = isDark
         ? Colors.white.withOpacity(0.01)
         : Colors.black.withOpacity(0.015);
 
     final lineSpacing = 120.0;
-    for (double i = -size.height; i < size.width + size.height; i += lineSpacing) {
+    for (
+      double i = -size.height;
+      i < size.width + size.height;
+      i += lineSpacing
+    ) {
       canvas.drawLine(
         Offset(i, 0),
         Offset(i + size.height, size.height),
@@ -668,7 +683,7 @@ class WhatsAppBackgroundPainter extends CustomPainter {
   void _drawTextureOverlay(Canvas canvas, Size size, Paint paint) {
     // Very subtle noise texture using small rectangles
     paint.style = PaintingStyle.fill;
-    paint.color = isDark 
+    paint.color = isDark
         ? Colors.white.withOpacity(0.008)
         : Colors.black.withOpacity(0.012);
 
@@ -680,11 +695,8 @@ class WhatsAppBackgroundPainter extends CustomPainter {
       final y = random.nextDouble() * size.height;
       final width = random.nextDouble() * 3 + 1;
       final height = random.nextDouble() * 3 + 1;
-      
-      canvas.drawRect(
-        Rect.fromLTWH(x, y, width, height),
-        paint,
-      );
+
+      canvas.drawRect(Rect.fromLTWH(x, y, width, height), paint);
     }
 
     // Add very subtle gradient overlay for depth
@@ -706,7 +718,9 @@ class WhatsAppBackgroundPainter extends CustomPainter {
     );
 
     final gradientPaint = Paint()
-      ..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ..shader = gradient.createShader(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+      );
 
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),

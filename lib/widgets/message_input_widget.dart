@@ -60,7 +60,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
     } else if (!hasContent && _sendButtonAnimationController.isCompleted) {
       _sendButtonAnimationController.reverse();
     }
-    
+
     // Trigger rebuild to update button state
     setState(() {});
   }
@@ -284,13 +284,17 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.primary.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: hasContent ? [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ] : null,
+                boxShadow: hasContent
+                    ? [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: widget.isLoading
                   ? const SizedBox(
@@ -298,9 +302,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : AnimatedScale(
@@ -309,9 +311,9 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
                       curve: Curves.easeInOut,
                       child: Icon(
                         Icons.send_rounded,
-                        color: hasContent 
-                          ? Colors.white 
-                          : Colors.white.withOpacity(0.8),
+                        color: hasContent
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.8),
                         size: 22,
                       ),
                     ),

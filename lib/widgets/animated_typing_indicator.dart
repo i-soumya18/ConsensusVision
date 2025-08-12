@@ -85,9 +85,12 @@ class _AnimatedTypingIndicatorState extends State<AnimatedTypingIndicator>
                 final waveValue = _waveAnimations[index].value;
                 final baseHeight = 4.0;
                 final maxHeight = 16.0;
-                final waveHeight = baseHeight + (maxHeight - baseHeight) * 
-                  (0.3 + 0.7 * (0.5 + 0.5 * math.sin(waveValue * math.pi)));
-                
+                final waveHeight =
+                    baseHeight +
+                    (maxHeight - baseHeight) *
+                        (0.3 +
+                            0.7 * (0.5 + 0.5 * math.sin(waveValue * math.pi)));
+
                 return AnimatedBuilder(
                   animation: _waveAnimations[index],
                   builder: (context, child) {
@@ -103,14 +106,20 @@ class _AnimatedTypingIndicatorState extends State<AnimatedTypingIndicator>
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AppTheme.primaryColor.withOpacity(0.4 + 0.4 * waveValue),
-                              AppTheme.primaryColor.withOpacity(0.7 + 0.3 * waveValue),
+                              AppTheme.primaryColor.withOpacity(
+                                0.4 + 0.4 * waveValue,
+                              ),
+                              AppTheme.primaryColor.withOpacity(
+                                0.7 + 0.3 * waveValue,
+                              ),
                               AppTheme.primaryColor.withOpacity(0.9),
                             ],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.2 * waveValue),
+                              color: AppTheme.primaryColor.withOpacity(
+                                0.2 * waveValue,
+                              ),
                               blurRadius: 3 * waveValue,
                               offset: const Offset(0, 1),
                             ),
@@ -121,7 +130,7 @@ class _AnimatedTypingIndicatorState extends State<AnimatedTypingIndicator>
                   },
                 );
               }),
-              
+
               // Shimmer effect for premium touch
               const SizedBox(width: 12),
               AnimatedBuilder(
@@ -152,7 +161,9 @@ class _AnimatedTypingIndicatorState extends State<AnimatedTypingIndicator>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3 * _shimmerAnimation.value),
+                          color: AppTheme.primaryColor.withOpacity(
+                            0.3 * _shimmerAnimation.value,
+                          ),
                           blurRadius: 6,
                           offset: const Offset(0, 1),
                         ),

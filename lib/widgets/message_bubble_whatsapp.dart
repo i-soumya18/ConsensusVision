@@ -32,10 +32,10 @@ class MessageBubble extends StatelessWidget {
 
         return Container(
           margin: EdgeInsets.only(
-            left: isUser ? MediaQuery.of(context).size.width * 0.15 : 16,
-            right: isUser ? 16 : MediaQuery.of(context).size.width * 0.15,
-            top: 3,
-            bottom: 3,
+            left: isUser ? 60 : 16,
+            right: isUser ? 16 : 60,
+            top: 2,
+            bottom: 2,
           ),
           child: Column(
             crossAxisAlignment: isUser
@@ -51,17 +51,11 @@ class MessageBubble extends StatelessWidget {
                     borderRadius: _getBorderRadius(isUser),
                     boxShadow: [
                       BoxShadow(
-                        color: isUser
-                            ? Colors.black.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.06),
-                        blurRadius: isUser ? 8 : 6,
-                        offset: Offset(0, isUser ? 2 : 1),
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
                       ),
                     ],
-                    // Add border for AI messages to better define them
-                    border: !isUser && !isError
-                        ? Border.all(color: Colors.grey.shade200, width: 0.5)
-                        : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,8 +63,8 @@ class MessageBubble extends StatelessWidget {
                       // Message content
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: message.imagePaths.isNotEmpty ? 10 : 12,
+                          horizontal: 12,
+                          vertical: message.imagePaths.isNotEmpty ? 8 : 10,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,9 +95,9 @@ class MessageBubble extends StatelessWidget {
                       // Message metadata
                       Padding(
                         padding: const EdgeInsets.only(
-                          left: 14,
-                          right: 14,
-                          bottom: 10,
+                          left: 12,
+                          right: 12,
+                          bottom: 8,
                         ),
                         child: _buildMessageMetadata(
                           isUser,
@@ -121,18 +115,17 @@ class MessageBubble extends StatelessWidget {
               if (!isSending)
                 Padding(
                   padding: EdgeInsets.only(
-                    top: 4,
-                    left: isUser ? 0 : 12,
-                    right: isUser ? 12 : 0,
+                    top: 2,
+                    left: isUser ? 0 : 8,
+                    right: isUser ? 8 : 0,
                   ),
                   child: Text(
                     DateFormat('HH:mm').format(message.timestamp),
                     style: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
+                      ).colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: 11,
                     ),
                   ),
                 ),
@@ -148,28 +141,9 @@ class MessageBubble extends StatelessWidget {
       return Colors.red.shade50;
     }
     if (isUser) {
-      // Use user-selected bubble color
-      return themeService.userBubbleColor;
+      return themeService.primaryColor;
     }
-    // Use user-selected AI bubble color
-    return themeService.aiBubbleColor;
-  }
-
-  Color _getTextColor(bool isUser, ThemeService themeService) {
-    if (isUser) {
-      // Calculate contrast color for user bubble
-      final bubbleColor = themeService.userBubbleColor;
-      return _getContrastColor(bubbleColor);
-    }
-    // Calculate contrast color for AI bubble
-    final bubbleColor = themeService.aiBubbleColor;
-    return _getContrastColor(bubbleColor);
-  }
-
-  Color _getContrastColor(Color backgroundColor) {
-    // Calculate luminance to determine if we need dark or light text
-    final luminance = backgroundColor.computeLuminance();
-    return luminance > 0.5 ? Colors.black87 : Colors.white;
+    return Colors.grey.shade100;
   }
 
   BorderRadius _getBorderRadius(bool isUser) {
@@ -194,12 +168,11 @@ class MessageBubble extends StatelessWidget {
         children: [
           Flexible(
             child: Text(
-              message.content.isNotEmpty ? message.content : 'Sending...',
+              message.content.isNotEmpty ? message.content : 'Typing...',
               style: TextStyle(
-                color: _getTextColor(isUser, themeService),
+                color: isUser ? Colors.white : Colors.black87,
                 fontSize: 16,
                 height: 1.4,
-                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -210,9 +183,7 @@ class MessageBubble extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 1.5,
               valueColor: AlwaysStoppedAnimation<Color>(
-                isUser
-                    ? _getTextColor(isUser, themeService).withOpacity(0.8)
-                    : themeService.primaryColor,
+                isUser ? Colors.white70 : themeService.primaryColor,
               ),
             ),
           ),
@@ -223,15 +194,10 @@ class MessageBubble extends StatelessWidget {
     if (isUser) {
       return SelectableText(
         message.content,
-        style: TextStyle(
-          color: _getTextColor(isUser, themeService),
-          fontSize: 16,
-          height: 1.4,
-          fontWeight: FontWeight.w400,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4),
       );
     } else {
-      return _buildMarkdownContent(message.content, themeService, false);
+      return _buildMarkdownContent(message.content, themeService);
     }
   }
 
@@ -310,116 +276,73 @@ class MessageBubble extends StatelessWidget {
             ),
           ),
 
-        // Message status for user messages (WhatsApp-style)
+        // Message status for user messages
         if (isUser && !isSending) ...[
-          const Spacer(),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Double check mark for sent messages
-              Icon(
-                message.status == MessageStatus.sent
-                    ? Icons.done_all
-                    : Icons.done,
-                size: 16,
-                color: message.status == MessageStatus.sent
-                    ? Colors
-                          .blue
-                          .shade300 // Read receipt color
-                    : _getTextColor(
-                        isUser,
-                        themeService,
-                      ).withOpacity(0.8), // Sent color
-              ),
-            ],
-          ),
-        ] else if (isUser) ...[
-          const Spacer(),
-          // Clock icon for sending messages
           Icon(
-            Icons.schedule,
+            message.status == MessageStatus.sent ? Icons.check : Icons.schedule,
             size: 14,
-            color: _getTextColor(isUser, themeService).withOpacity(0.8),
+            color: Colors.white70,
           ),
         ],
       ],
     );
   }
 
-  Widget _buildMarkdownContent(
-    String content,
-    ThemeService themeService,
-    bool isUser,
-  ) {
-    final textColor = _getTextColor(isUser, themeService);
-    final isDarkBackground = textColor == Colors.white;
-
+  Widget _buildMarkdownContent(String content, ThemeService themeService) {
     return Container(
       constraints: const BoxConstraints(minHeight: 0),
       child: MarkdownBody(
         data: content,
         selectable: true,
         styleSheet: MarkdownStyleSheet(
-          // Base text style with dynamic color
-          p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+          // Base text style
+          p: const TextStyle(color: Colors.black87, fontSize: 16, height: 1.4),
 
-          // Headers with dynamic color
-          h1: TextStyle(
-            color: textColor,
+          // Headers
+          h1: const TextStyle(
+            color: Colors.black87,
             fontSize: 22,
             fontWeight: FontWeight.bold,
             height: 1.3,
           ),
-          h2: TextStyle(
-            color: textColor,
+          h2: const TextStyle(
+            color: Colors.black87,
             fontSize: 20,
             fontWeight: FontWeight.bold,
             height: 1.3,
           ),
-          h3: TextStyle(
-            color: textColor,
+          h3: const TextStyle(
+            color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.3,
           ),
 
-          // Code styling with adaptive colors
+          // Code styling
           code: TextStyle(
-            backgroundColor: isDarkBackground
-                ? Colors.grey.shade800
-                : Colors.grey.shade100,
-            color: isDarkBackground
-                ? Colors.orange.shade300
-                : Colors.red.shade700,
+            backgroundColor: Colors.grey.shade100,
+            color: Colors.red.shade700,
             fontFamily: 'monospace',
             fontSize: 14,
           ),
           codeblockDecoration: BoxDecoration(
-            color: isDarkBackground
-                ? Colors.grey.shade800
-                : Colors.grey.shade50,
+            color: Colors.grey.shade50,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDarkBackground
-                  ? Colors.grey.shade600
-                  : Colors.grey.shade300,
-            ),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           codeblockPadding: const EdgeInsets.all(12),
 
           // Lists
           listBullet: TextStyle(color: themeService.primaryColor, fontSize: 16),
 
-          // Quotes with adaptive colors
+          // Quotes
           blockquote: TextStyle(
-            color: isDarkBackground ? Colors.white70 : Colors.black54,
+            color: Colors.black54,
             fontStyle: FontStyle.italic,
             fontSize: 16,
           ),
           blockquoteDecoration: BoxDecoration(
-            color: isDarkBackground
-                ? Colors.grey.shade800
-                : Colors.grey.shade50,
+            color: Colors.grey.shade50,
             border: Border(
               left: BorderSide(color: themeService.primaryColor, width: 3),
             ),
@@ -432,9 +355,15 @@ class MessageBubble extends StatelessWidget {
             decoration: TextDecoration.underline,
           ),
 
-          // Emphasis with dynamic colors
-          strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-          em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
+          // Emphasis
+          strong: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+          em: const TextStyle(
+            color: Colors.black87,
+            fontStyle: FontStyle.italic,
+          ),
         ),
       ),
     );
