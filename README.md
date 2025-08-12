@@ -1,4 +1,4 @@
-# ImageQuery AI
+# ConsensusVision
 
 A modern, creative chatbot interface for Android and Windows that processes images using AI to extract text and provide accurate responses. The app uses multiple AI models (Gemini AI and Hugging Face) to ensure the most accurate answers by comparing and evaluating responses.
 
