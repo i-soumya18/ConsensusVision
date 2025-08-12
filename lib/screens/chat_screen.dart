@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
+import '../models/message.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
 import '../widgets/conversation_context_indicator.dart';
@@ -268,6 +270,12 @@ class _ChatScreenState extends State<ChatScreen> {
         return MessageBubble(
           message: message,
           onRetry: () => chatProvider.retryLastMessage(),
+          onEdit: message.type == MessageType.user
+              ? () => _showEditMessageDialog(context, chatProvider, message)
+              : null,
+          onShare: message.type == MessageType.ai
+              ? () => _shareMessage(context, chatProvider, message)
+              : null,
         );
       },
     );
@@ -321,5 +329,97 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  void _showEditMessageDialog(
+    BuildContext context,
+    ChatProvider chatProvider,
+    Message message,
+  ) {
+    final TextEditingController editController = TextEditingController(
+      text: message.content,
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Message'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Show images if present
+              if (message.imagePaths.isNotEmpty) ...[
+                const Text(
+                  'Images attached:',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: message.imagePaths.map((path) {
+                    final fileName = path.split('/').last;
+                    return Chip(
+                      label: Text(fileName),
+                      avatar: const Icon(Icons.image, size: 16),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+              TextField(
+                controller: editController,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  hintText: 'Edit your message...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Note: Editing will regenerate the AI response and remove subsequent messages.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newContent = editController.text.trim();
+                if (newContent.isNotEmpty && newContent != message.content) {
+                  chatProvider.editMessage(
+                    messageId: message.id,
+                    newContent: newContent,
+                  );
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _shareMessage(
+    BuildContext context,
+    ChatProvider chatProvider,
+    Message message,
+  ) {
+    chatProvider.shareMessage(message);
+
+    // Show a snackbar to indicate the message was copied to clipboard
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Message copied to clipboard'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }
