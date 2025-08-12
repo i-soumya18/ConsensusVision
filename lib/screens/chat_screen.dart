@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/chat_provider.dart';
+import '../providers/context_aware_chat_provider.dart';
 import '../models/message.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input_widget.dart';
@@ -35,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: Consumer<ChatProvider>(
+      body: Consumer<ContextAwareChatProvider>(
         builder: (context, chatProvider, child) {
           return Column(
             children: [
@@ -44,7 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _buildErrorBanner(chatProvider.error!),
 
               // Emotional Intelligence Dashboard
-              if (chatProvider.emotionalIntelligenceEnabled &&
+              if (chatProvider.enableEmotionalIntelligence &&
                   chatProvider.currentMessages.isNotEmpty)
                 const EmotionalIntelligenceDashboard(),
 
@@ -265,7 +265,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(ChatProvider chatProvider) {
+  Widget _buildMessagesList(ContextAwareChatProvider chatProvider) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -290,7 +290,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showChatSessions() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider.value(
@@ -310,12 +310,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _createNewChat() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     chatProvider.createNewChatSession();
   }
 
   void _showSettings() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -341,7 +341,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _showEditMessageDialog(
     BuildContext context,
-    ChatProvider chatProvider,
+    ContextAwareChatProvider chatProvider,
     Message message,
   ) {
     final TextEditingController editController = TextEditingController(
@@ -417,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _shareMessage(
     BuildContext context,
-    ChatProvider chatProvider,
+    ContextAwareChatProvider chatProvider,
     Message message,
   ) {
     chatProvider.shareMessage(message);
@@ -433,7 +433,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _readMessageAloud(
     BuildContext context,
-    ChatProvider chatProvider,
+    ContextAwareChatProvider chatProvider,
     Message message,
   ) {
     chatProvider.readMessageAloud(message);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/chat_provider.dart';
+import '../providers/context_aware_chat_provider.dart';
 import '../models/emotional_state.dart';
 import '../services/emotional_memory_service.dart';
 
@@ -18,7 +18,7 @@ class _EmotionalIntelligenceDashboardState
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChatProvider>(
+    return Consumer<ContextAwareChatProvider>(
       builder: (context, chatProvider, child) {
         if (!chatProvider.emotionalIntelligenceEnabled) {
           return const SizedBox.shrink();
@@ -41,28 +41,29 @@ class _EmotionalIntelligenceDashboardState
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Emotional Intelligence',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    'Emotional Intelligence',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const Spacer(),
                 if (needsSupport)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 6,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Support Recommended',
+                      'Support',
                       style: TextStyle(
                         color: Colors.orange.shade800,
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -308,7 +309,7 @@ class _EmotionalIntelligenceDashboardState
     );
   }
 
-  Widget _buildActionButtons(ChatProvider chatProvider) {
+  Widget _buildActionButtons(ContextAwareChatProvider chatProvider) {
     return Row(
       children: [
         Expanded(
@@ -369,7 +370,7 @@ class _EmotionalIntelligenceDashboardState
     }
   }
 
-  void _showDetailedAnalytics(BuildContext context, ChatProvider chatProvider) {
+  void _showDetailedAnalytics(BuildContext context, ContextAwareChatProvider chatProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

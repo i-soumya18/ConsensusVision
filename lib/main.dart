@@ -5,7 +5,7 @@ import 'dart:io';
 import 'services/config_service.dart';
 import 'services/database_service.dart';
 import 'services/theme_service.dart';
-import 'providers/chat_provider.dart';
+import 'providers/context_aware_chat_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/setup_screen.dart';
 import 'screens/chat_screen.dart';
@@ -96,7 +96,7 @@ class ChatWrapper extends StatelessWidget {
     }
 
     return ChangeNotifierProvider(
-      create: (context) => ChatProvider(
+      create: (context) => ContextAwareChatProvider(
         geminiApiKey: geminiApiKey,
         huggingFaceApiKey: huggingFaceApiKey,
       )..initialize(),

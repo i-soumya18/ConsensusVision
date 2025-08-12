@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../providers/chat_provider.dart';
+import '../providers/context_aware_chat_provider.dart';
 import '../models/chat_session.dart';
 
 class ChatSessionsScreen extends StatefulWidget {
@@ -17,7 +17,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     super.initState();
     // Ensure sessions are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ChatProvider>(context, listen: false).initialize();
+      Provider.of<ContextAwareChatProvider>(context, listen: false).initialize();
     });
   }
 
@@ -34,7 +34,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
           ),
         ],
       ),
-      body: Consumer<ChatProvider>(
+      body: Consumer<ContextAwareChatProvider>(
         builder: (context, chatProvider, child) {
           if (chatProvider.chatSessions.isEmpty) {
             return _buildEmptyState();
@@ -88,7 +88,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     );
   }
 
-  Widget _buildSessionCard(ChatSession session, ChatProvider chatProvider) {
+  Widget _buildSessionCard(ChatSession session, ContextAwareChatProvider chatProvider) {
     final isActive = chatProvider.currentSession?.id == session.id;
 
     return Card(
@@ -195,13 +195,13 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
   }
 
   void _createNewChat() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     chatProvider.createNewChatSession().then((_) {
       Navigator.pop(context);
     });
   }
 
-  void _selectSession(ChatSession session, ChatProvider chatProvider) {
+  void _selectSession(ChatSession session, ContextAwareChatProvider chatProvider) {
     chatProvider.switchToChatSession(session.id).then((_) {
       Navigator.pop(context);
     });
@@ -210,7 +210,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
   void _handleSessionAction(
     String action,
     ChatSession session,
-    ChatProvider chatProvider,
+    ContextAwareChatProvider chatProvider,
   ) {
     switch (action) {
       case 'rename':
@@ -222,7 +222,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     }
   }
 
-  void _showRenameDialog(ChatSession session, ChatProvider chatProvider) {
+  void _showRenameDialog(ChatSession session, ContextAwareChatProvider chatProvider) {
     final TextEditingController controller = TextEditingController(
       text: session.title,
     );
@@ -259,7 +259,7 @@ class _ChatSessionsScreenState extends State<ChatSessionsScreen> {
     );
   }
 
-  void _showDeleteConfirmation(ChatSession session, ChatProvider chatProvider) {
+  void _showDeleteConfirmation(ChatSession session, ContextAwareChatProvider chatProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

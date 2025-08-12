@@ -7,7 +7,7 @@ import '../services/model_registry_service.dart';
 import '../services/emotional_memory_service.dart';
 import '../models/emotional_state.dart';
 import '../theme/app_theme.dart';
-import '../providers/chat_provider.dart';
+import '../providers/context_aware_chat_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -955,7 +955,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildEmotionalIntelligenceSection() {
-    return Consumer<ChatProvider>(
+    return Consumer<ContextAwareChatProvider>(
       builder: (context, chatProvider, child) => _buildSectionCard(
         title: 'Emotional Intelligence',
         icon: Icons.psychology,
@@ -1416,7 +1416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _clearChatHistory() async {
     try {
-      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
       await chatProvider.clearAllChatSessions();
       _showSnackBar('Chat history cleared');
     } catch (e) {

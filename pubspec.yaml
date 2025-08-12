@@ -75,6 +75,9 @@ dependencies:
   # Permissions
   permission_handler: ^11.2.0
   
+  # Device information
+  device_info_plus: ^9.1.2
+  
   # File handling for export
   path_provider: ^2.1.2
   share_plus: ^7.2.2

@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../services/theme_service.dart';
 import '../screens/prompt_library_screen.dart';
-import '../providers/chat_provider.dart';
+import '../providers/context_aware_chat_provider.dart';
 
 class MessageInputWidget extends StatefulWidget {
   final Function(String message, List<File>? images, {String? promptTemplate})
@@ -105,7 +105,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           // Session default prompt indicator (shown when no specific prompt is selected)
-          Consumer<ChatProvider>(
+          Consumer<ContextAwareChatProvider>(
             builder: (context, chatProvider, child) {
               final hasDefaultPrompt =
                   chatProvider.currentSessionDefaultPrompt != null;
@@ -385,7 +385,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
           const SizedBox(width: 8),
           GestureDetector(
             onTap: () async {
-              final chatProvider = Provider.of<ChatProvider>(
+              final chatProvider = Provider.of<ContextAwareChatProvider>(
                 context,
                 listen: false,
               );
@@ -904,7 +904,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       });
 
       // Set this prompt as the default for the current chat session
-      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
       await chatProvider.setDefaultPromptForSession(selectedPrompt);
 
       // Trigger animations
@@ -986,7 +986,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       return '✨ Enhanced AI prompt active - type your question...';
     }
 
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     if (chatProvider.currentSessionDefaultPrompt != null) {
       return '⭐ Default prompt active - type your message...';
     }
@@ -1002,7 +1002,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       );
     }
 
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     if (chatProvider.currentSessionDefaultPrompt != null) {
       return TextStyle(
         color: primaryColor.withOpacity(0.6),
@@ -1022,7 +1022,7 @@ class _MessageInputWidgetState extends State<MessageInputWidget>
       return primaryColor.withOpacity(0.05);
     }
 
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final chatProvider = Provider.of<ContextAwareChatProvider>(context, listen: false);
     if (chatProvider.currentSessionDefaultPrompt != null) {
       return primaryColor.withOpacity(0.03);
     }
