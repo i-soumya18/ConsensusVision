@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/context_aware_chat_provider.dart';
 import '../models/emotional_state.dart';
-import '../services/emotional_memory_service.dart';
 
 class EmotionalIntelligenceDashboard extends StatefulWidget {
   const EmotionalIntelligenceDashboard({super.key});
@@ -348,27 +347,17 @@ class _EmotionalIntelligenceDashboardState
     );
   }
 
-  Color _getTrendColor(EmotionalTrend trend) {
-    switch (trend) {
-      case EmotionalTrend.improving:
-        return Colors.green;
-      case EmotionalTrend.stable:
-        return Colors.blue;
-      case EmotionalTrend.declining:
-        return Colors.orange;
-    }
-  }
+  Color _getTrendColor(EmotionalTrend trend) => switch (trend) {
+    EmotionalTrend.improving => Colors.green,
+    EmotionalTrend.stable => Colors.blue,
+    EmotionalTrend.declining => Colors.orange,
+  };
 
-  IconData _getTrendIcon(EmotionalTrend trend) {
-    switch (trend) {
-      case EmotionalTrend.improving:
-        return Icons.trending_up;
-      case EmotionalTrend.stable:
-        return Icons.trending_flat;
-      case EmotionalTrend.declining:
-        return Icons.trending_down;
-    }
-  }
+  IconData _getTrendIcon(EmotionalTrend trend) => switch (trend) {
+    EmotionalTrend.improving => Icons.trending_up,
+    EmotionalTrend.stable => Icons.trending_flat,
+    EmotionalTrend.declining => Icons.trending_down,
+  };
 
   void _showDetailedAnalytics(
     BuildContext context,

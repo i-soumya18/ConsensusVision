@@ -389,18 +389,3 @@ class EmotionalMemoryService {
     };
   }
 }
-
-enum EmotionalTrend { improving, stable, declining }
-
-extension EmotionalTrendExtension on EmotionalTrend {
-  String get displayName {
-    switch (this) {
-      case EmotionalTrend.improving:
-        return 'Improving';
-      case EmotionalTrend.stable:
-        return 'Stable';
-      case EmotionalTrend.declining:
-        return 'Declining';
-    }
-  }
-}

@@ -95,3 +95,72 @@ Map<String, dynamic> _$UserEmotionalProfileToJson(
   'triggerPatterns': instance.triggerPatterns,
   'averageIntensity': instance.averageIntensity,
 };
+
+RealTimeEmotionalAnalysis _$RealTimeEmotionalAnalysisFromJson(
+  Map<String, dynamic> json,
+) => RealTimeEmotionalAnalysis(
+  sessionId: json['sessionId'] as String,
+  timestamp: DateTime.parse(json['timestamp'] as String),
+  recentStates: (json['recentStates'] as List<dynamic>)
+      .map((e) => EmotionalState.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  trend: $enumDecode(_$EmotionalTrendEnumMap, json['trend']),
+  confidence: (json['confidence'] as num).toDouble(),
+  patterns: json['patterns'] as Map<String, dynamic>,
+);
+
+Map<String, dynamic> _$RealTimeEmotionalAnalysisToJson(
+  RealTimeEmotionalAnalysis instance,
+) => <String, dynamic>{
+  'sessionId': instance.sessionId,
+  'timestamp': instance.timestamp.toIso8601String(),
+  'recentStates': instance.recentStates,
+  'trend': _$EmotionalTrendEnumMap[instance.trend]!,
+  'confidence': instance.confidence,
+  'patterns': instance.patterns,
+};
+
+const _$EmotionalTrendEnumMap = {
+  EmotionalTrend.improving: 'improving',
+  EmotionalTrend.stable: 'stable',
+  EmotionalTrend.declining: 'declining',
+};
+
+EnhancedEmotionalContext _$EnhancedEmotionalContextFromJson(
+  Map<String, dynamic> json,
+) => EnhancedEmotionalContext(
+  primaryState: EmotionalState.fromJson(
+    json['primaryState'] as Map<String, dynamic>,
+  ),
+  contextualStates: (json['contextualStates'] as List<dynamic>)
+      .map((e) => EmotionalState.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  recommendedTone: $enumDecode(_$ResponseToneEnumMap, json['recommendedTone']),
+  voiceToneAnalysis: json['voiceToneAnalysis'] as Map<String, dynamic>,
+  patternAnalysis: json['patternAnalysis'] as Map<String, dynamic>,
+  emotionalComplexity: (json['emotionalComplexity'] as num).toDouble(),
+);
+
+Map<String, dynamic> _$EnhancedEmotionalContextToJson(
+  EnhancedEmotionalContext instance,
+) => <String, dynamic>{
+  'primaryState': instance.primaryState,
+  'contextualStates': instance.contextualStates,
+  'recommendedTone': _$ResponseToneEnumMap[instance.recommendedTone]!,
+  'voiceToneAnalysis': instance.voiceToneAnalysis,
+  'patternAnalysis': instance.patternAnalysis,
+  'emotionalComplexity': instance.emotionalComplexity,
+};
+
+const _$ResponseToneEnumMap = {
+  ResponseTone.supportive: 'supportive',
+  ResponseTone.encouraging: 'encouraging',
+  ResponseTone.celebratory: 'celebratory',
+  ResponseTone.reassuring: 'reassuring',
+  ResponseTone.patient: 'patient',
+  ResponseTone.empathetic: 'empathetic',
+  ResponseTone.professional: 'professional',
+  ResponseTone.casual: 'casual',
+  ResponseTone.enthusiastic: 'enthusiastic',
+  ResponseTone.gentle: 'gentle',
+};

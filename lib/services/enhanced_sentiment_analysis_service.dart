@@ -1,12 +1,13 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/emotional_state.dart';
 
-class SentimentAnalysisService {
-  static final SentimentAnalysisService _instance =
-      SentimentAnalysisService._internal();
-  factory SentimentAnalysisService() => _instance;
-  SentimentAnalysisService._internal();
+class EnhancedSentimentAnalysisService {
+  static final EnhancedSentimentAnalysisService _instance =
+      EnhancedSentimentAnalysisService._internal();
+  factory EnhancedSentimentAnalysisService() => _instance;
+  EnhancedSentimentAnalysisService._internal();
 
   bool _isInitialized = false;
 
@@ -47,55 +48,29 @@ class SentimentAnalysisService {
     },
   };
 
-  // Simple sentiment lexicon for basic analysis
+  // Enhanced sentiment lexicon
   final Map<String, double> _sentimentLexicon = {
     // Positive words
-    'love': 3.0,
-    'amazing': 3.0,
-    'awesome': 3.0,
-    'fantastic': 3.0,
-    'excellent': 3.0,
-    'wonderful': 3.0,
-    'brilliant': 3.0,
-    'perfect': 3.0,
-    'great': 2.5,
-    'good': 2.0,
-    'nice': 2.0, 'happy': 2.5, 'pleased': 2.0, 'satisfied': 2.0, 'thank': 2.0,
-    'thanks': 2.0,
-    'helpful': 2.0,
-    'useful': 2.0,
-    'clear': 1.5,
-    'understand': 1.5,
-    'got it': 2.0, 'makes sense': 2.0, 'solved': 2.5, 'works': 2.0, 'easy': 1.5,
+    'love': 3.0, 'amazing': 3.0, 'awesome': 3.0, 'fantastic': 3.0,
+    'excellent': 3.0, 'wonderful': 3.0, 'brilliant': 3.0, 'perfect': 3.0,
+    'great': 2.5, 'good': 2.0, 'nice': 2.0, 'happy': 2.5, 'pleased': 2.0,
+    'satisfied': 2.0, 'thank': 2.0, 'thanks': 2.0, 'helpful': 2.0,
+    'useful': 2.0, 'clear': 1.5, 'understand': 1.5, 'got it': 2.0,
+    'makes sense': 2.0, 'solved': 2.5, 'works': 2.0, 'easy': 1.5,
 
     // Negative words
-    'hate': -3.0,
-    'terrible': -3.0,
-    'awful': -3.0,
-    'horrible': -3.0,
-    'worst': -3.0,
-    'stupid': -2.5,
-    'bad': -2.0,
-    'frustrated': -2.5,
-    'angry': -2.5,
-    'confused': -2.0,
-    'difficult': -1.5,
-    'hard': -1.5,
-    'stuck': -2.0,
-    'lost': -2.0,
-    'unclear': -1.5,
-    'doesn\'t work': -2.5, 'not working': -2.5, 'broken': -2.0, 'wrong': -1.5,
-    'error': -1.5,
-    'problem': -1.0,
-    'issue': -1.0,
-    'trouble': -1.5,
-    'fail': -2.0,
+    'hate': -3.0, 'terrible': -3.0, 'awful': -3.0, 'horrible': -3.0,
+    'worst': -3.0, 'stupid': -2.5, 'bad': -2.0, 'frustrated': -2.5,
+    'angry': -2.5, 'confused': -2.0, 'difficult': -1.5, 'hard': -1.5,
+    'stuck': -2.0, 'lost': -2.0, 'unclear': -1.5, 'doesn\'t work': -2.5,
+    'not working': -2.5, 'broken': -2.0, 'wrong': -1.5, 'error': -1.5,
+    'problem': -1.0, 'issue': -1.0, 'trouble': -1.5, 'fail': -2.0,
 
     // Neutral/question words
     'what': 0.0, 'how': 0.0, 'why': 0.0, 'when': 0.0, 'where': 0.0, 'help': 0.5,
   };
 
-  // Emotional patterns for enhanced detection
+  // Enhanced emotion keywords
   final Map<EmotionType, List<String>> _emotionKeywords = {
     EmotionType.joy: [
       'happy',
@@ -135,81 +110,29 @@ class SentimentAnalysisService {
       'confused',
       'unclear',
       'don\'t understand',
-      'what',
-      'how',
-      'why',
       'lost',
+      'what',
     ],
     EmotionType.frustration: [
       'frustrated',
-      'annoying',
+      'annoyed',
       'stuck',
       'difficult',
       'hard',
-      'ugh',
-      'argh',
+      'why',
     ],
-    EmotionType.anger: [
-      'angry',
-      'mad',
-      'furious',
-      'hate',
-      'stupid',
-      'terrible',
-      'awful',
-    ],
-    EmotionType.sadness: [
-      'sad',
-      'disappointed',
-      'down',
-      'depressed',
-      'unhappy',
-      'sorry',
-    ],
-    EmotionType.anxiety: [
-      'anxious',
-      'worried',
-      'nervous',
-      'scared',
-      'afraid',
-      'stress',
-    ],
-    EmotionType.fear: [
-      'fear',
-      'terrified',
-      'afraid',
-      'scary',
-      'frightened',
-      'panic',
-    ],
-    EmotionType.surprise: [
-      'surprised',
-      'wow',
-      'unexpected',
-      'sudden',
-      'shocked',
-      'amazed',
-    ],
-    EmotionType.interest: [
-      'interesting',
-      'curious',
-      'tell me more',
-      'explain',
-      'learn',
-    ],
-    EmotionType.boredom: [
-      'boring',
-      'bored',
-      'dull',
-      'tedious',
-      'uninteresting',
-    ],
+    EmotionType.anger: ['angry', 'mad', 'furious', 'hate', 'stupid'],
+    EmotionType.sadness: ['sad', 'disappointed', 'unhappy', 'depressed'],
+    EmotionType.anxiety: ['worried', 'nervous', 'anxious', 'scared', 'afraid'],
+    EmotionType.fear: ['scared', 'afraid', 'terrified', 'worried'],
+    EmotionType.surprise: ['surprised', 'wow', 'unexpected', 'shocked'],
+    EmotionType.interest: ['interesting', 'curious', 'want to know', 'learn'],
+    EmotionType.boredom: ['boring', 'bored', 'dull', 'tedious'],
     EmotionType.disappointment: [
       'disappointed',
       'let down',
       'expected',
       'hoped',
-      'thought',
     ],
   };
 
@@ -232,11 +155,11 @@ class SentimentAnalysisService {
     try {
       _isInitialized = true;
       if (kDebugMode) {
-        print('Sentiment Analysis Service initialized successfully');
+        print('Enhanced Sentiment Analysis Service initialized successfully');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error initializing Sentiment Analysis Service: $e');
+        print('Error initializing Enhanced Sentiment Analysis Service: $e');
       }
     }
   }
@@ -321,11 +244,13 @@ class SentimentAnalysisService {
     double toneScore = 0.0;
 
     // Check for caps (indicates shouting/strong emotion)
-    final upperCaseRatio =
-        text.replaceAll(RegExp(r'[^A-Z]'), '').length /
-        text.replaceAll(RegExp(r'[^a-zA-Z]'), '').length;
-    if (upperCaseRatio > 0.5) {
-      toneScore += _voiceToneIndicators['CAPS']!;
+    final alphabeticText = text.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+    if (alphabeticText.isNotEmpty) {
+      final upperCaseRatio =
+          text.replaceAll(RegExp(r'[^A-Z]'), '').length / alphabeticText.length;
+      if (upperCaseRatio > 0.5) {
+        toneScore += _voiceToneIndicators['CAPS']!;
+      }
     }
 
     // Check for multiple exclamations
@@ -461,6 +386,105 @@ class SentimentAnalysisService {
     return intensity.clamp(0.0, 1.0);
   }
 
+  /// Calculate sentiment score using enhanced lexicon
+  double _calculateSentimentScore(String text) {
+    final words = text.toLowerCase().split(RegExp(r'\W+'));
+    double totalScore = 0.0;
+    int matchedWords = 0;
+
+    for (final word in words) {
+      if (_sentimentLexicon.containsKey(word)) {
+        totalScore += _sentimentLexicon[word]!;
+        matchedWords++;
+      }
+    }
+
+    // Apply intensity modifiers
+    for (final entry in _sentimentLexicon.entries) {
+      if (text.toLowerCase().contains(entry.key)) {
+        final modifiedScore = _applyIntensityModifiers(
+          text,
+          entry.key,
+          entry.value,
+        );
+        if (modifiedScore != entry.value) {
+          totalScore += (modifiedScore - entry.value);
+        }
+      }
+    }
+
+    return matchedWords > 0 ? totalScore / matchedWords : 0.0;
+  }
+
+  /// Apply intensity modifiers to sentiment scores
+  double _applyIntensityModifiers(String text, String word, double baseScore) {
+    final lowerText = text.toLowerCase();
+    double modifiedScore = baseScore;
+
+    for (final entry in _intensityModifiers.entries) {
+      final modifier = entry.key;
+      final multiplier = entry.value;
+
+      if (lowerText.contains('$modifier $word') ||
+          lowerText.contains('$modifier${word}')) {
+        modifiedScore *= multiplier;
+        break;
+      }
+    }
+
+    return modifiedScore;
+  }
+
+  /// Calculate intensity based on various factors
+  double _calculateIntensity(String text, double sentimentScore) {
+    double intensity = sentimentScore.abs() * 0.5;
+
+    // Factor in exclamation marks
+    final exclamationCount = '!'.allMatches(text).length;
+    intensity += exclamationCount * 0.1;
+
+    // Factor in question marks (uncertainty increases intensity)
+    final questionCount = '?'.allMatches(text).length;
+    intensity += questionCount * 0.05;
+
+    // Factor in caps
+    final capsRatio =
+        text.replaceAll(RegExp(r'[^A-Z]'), '').length / text.length;
+    intensity += capsRatio * 0.3;
+
+    // Factor in emotion keywords
+    final emotions = _detectEmotions(text);
+    intensity += emotions.length * 0.1;
+
+    return intensity.clamp(0.0, 1.0);
+  }
+
+  /// Basic emotion detection (for compatibility)
+  List<EmotionType> _detectEmotions(String text) {
+    final detectedEmotions = <EmotionType>[];
+    final lowerText = text.toLowerCase();
+
+    for (final entry in _emotionKeywords.entries) {
+      for (final keyword in entry.value) {
+        if (lowerText.contains(keyword)) {
+          detectedEmotions.add(entry.key);
+          break;
+        }
+      }
+    }
+
+    return detectedEmotions.isEmpty ? [EmotionType.calm] : detectedEmotions;
+  }
+
+  /// Map sentiment score to sentiment type
+  SentimentType _mapSentimentScore(double score) {
+    if (score >= 2.0) return SentimentType.veryPositive;
+    if (score >= 0.5) return SentimentType.positive;
+    if (score <= -2.0) return SentimentType.veryNegative;
+    if (score <= -0.5) return SentimentType.negative;
+    return SentimentType.neutral;
+  }
+
   /// Analyze emotional patterns for real-time insights
   Map<String, dynamic> _analyzeEmotionalPatterns(String text) {
     final patterns = <String, dynamic>{};
@@ -495,7 +519,7 @@ class SentimentAnalysisService {
         .where((context) => context.isNotEmpty)
         .toList();
 
-    // Simple similarity check (can be enhanced with more sophisticated algorithms)
+    // Simple similarity check
     return recentTexts.any(
       (recentText) => _calculateTextSimilarity(text, recentText) > 0.6,
     );
@@ -599,157 +623,59 @@ class SentimentAnalysisService {
     };
   }
 
-  // Private helper methods
-  double _calculateSentimentScore(String text) {
-    final words = text.toLowerCase().split(RegExp(r'\W+'));
-    double totalScore = 0.0;
-    int matchedWords = 0;
+  /// Get comprehensive emotional insights
+  Map<String, dynamic> getComprehensiveEmotionalInsights() {
+    return {
+      'real_time_trend': getRealTimeEmotionalTrend(),
+      'recent_analyses_count': _recentAnalyses.length,
+      'dominant_recent_emotions': _getDominantRecentEmotions(),
+      'average_intensity': _getAverageRecentIntensity(),
+      'emotional_volatility': _calculateEmotionalVolatility(),
+    };
+  }
 
-    for (final word in words) {
-      if (_sentimentLexicon.containsKey(word)) {
-        totalScore += _sentimentLexicon[word]!;
-        matchedWords++;
+  /// Get dominant emotions from recent analyses
+  List<String> _getDominantRecentEmotions() {
+    if (_recentAnalyses.isEmpty) return [];
+
+    final emotionCounts = <EmotionType, int>{};
+
+    for (final analysis in _recentAnalyses) {
+      for (final emotion in analysis.emotions) {
+        emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
       }
     }
 
-    // Check for phrases
-    final lowerText = text.toLowerCase();
-    for (final entry in _sentimentLexicon.entries) {
-      if (entry.key.contains(' ') && lowerText.contains(entry.key)) {
-        totalScore += entry.value;
-        matchedWords++;
-      }
-    }
+    final sortedEmotions = emotionCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
-    return matchedWords > 0 ? totalScore / matchedWords : 0.0;
+    return sortedEmotions.take(3).map((e) => e.key.displayName).toList();
   }
 
-  /// Analyze conversation patterns for emotional trends
-  Future<List<EmotionalState>> analyzeConversationPattern(
-    List<String> messages,
-  ) async {
-    final results = <EmotionalState>[];
+  /// Get average intensity from recent analyses
+  double _getAverageRecentIntensity() {
+    if (_recentAnalyses.isEmpty) return 0.0;
 
-    for (int i = 0; i < messages.length; i++) {
-      final message = messages[i];
-      final contextualWeight = _calculateContextualWeight(i, messages.length);
+    final totalIntensity = _recentAnalyses
+        .map((e) => e.intensity)
+        .reduce((a, b) => a + b);
 
-      // Analyze with conversation context
-      final emotionalState = await analyzeText(
-        message,
-        context: 'conversation_message_${i + 1}',
-      );
-
-      // Adjust intensity based on conversation flow
-      final adjustedState = emotionalState.copyWith(
-        intensity: (emotionalState.intensity * contextualWeight).clamp(
-          0.0,
-          1.0,
-        ),
-        metadata: {
-          ...?emotionalState.metadata,
-          'contextual_weight': contextualWeight,
-          'message_position': i + 1,
-          'total_messages': messages.length,
-        },
-      );
-
-      results.add(adjustedState);
-    }
-
-    return results;
+    return totalIntensity / _recentAnalyses.length;
   }
 
-  /// Detect frustration patterns specifically
-  bool detectFrustrationPattern(List<String> recentMessages) {
-    if (recentMessages.length < 2) return false;
+  /// Calculate emotional volatility (how much emotions change)
+  double _calculateEmotionalVolatility() {
+    if (_recentAnalyses.length < 2) return 0.0;
 
-    final frustrationIndicators = [
-      'doesn\'t work',
-      'not working',
-      'still confused',
-      'I don\'t get it',
-      'this is hard',
-      'give up',
-      'nevermind',
-      'forget it',
-      'ugh',
-      'argh',
-    ];
+    final intensities = _recentAnalyses.map((e) => e.intensity).toList();
+    final mean = intensities.reduce((a, b) => a + b) / intensities.length;
 
-    int frustrationCount = 0;
-    for (final message in recentMessages.take(3)) {
-      final lowerMessage = message.toLowerCase();
-      for (final indicator in frustrationIndicators) {
-        if (lowerMessage.contains(indicator)) {
-          frustrationCount++;
-          break;
-        }
-      }
-    }
+    final variance =
+        intensities
+            .map((intensity) => pow(intensity - mean, 2))
+            .reduce((a, b) => a + b) /
+        intensities.length;
 
-    return frustrationCount >= 2;
-  }
-
-  /// Detect achievement/success patterns
-  bool detectAchievementPattern(String text) {
-    final achievementKeywords = [
-      'got it',
-      'understand',
-      'thank you',
-      'thanks',
-      'perfect',
-      'exactly',
-      'that works',
-      'solved',
-      'figured it out',
-      'makes sense',
-      'brilliant',
-      'helpful',
-    ];
-
-    final lowerText = text.toLowerCase();
-    return achievementKeywords.any((keyword) => lowerText.contains(keyword));
-  }
-
-  SentimentType _mapSentimentScore(double score) {
-    if (score >= 3) return SentimentType.veryPositive;
-    if (score >= 1) return SentimentType.positive;
-    if (score <= -3) return SentimentType.veryNegative;
-    if (score <= -1) return SentimentType.negative;
-    return SentimentType.neutral;
-  }
-
-  double _calculateIntensity(String text, double sentimentScore) {
-    double intensity = (sentimentScore.abs() / 5.0).clamp(0.0, 1.0);
-
-    // Apply intensity modifiers
-    final lowerText = text.toLowerCase();
-    for (final entry in _intensityModifiers.entries) {
-      if (lowerText.contains(entry.key)) {
-        intensity *= entry.value;
-        break;
-      }
-    }
-
-    // Punctuation-based intensity
-    final exclamationCount = '!'.allMatches(text).length;
-    final questionCount = '?'.allMatches(text).length;
-    final capsRatio =
-        text.replaceAll(RegExp(r'[^A-Z]'), '').length / text.length;
-
-    intensity += (exclamationCount * 0.1);
-    intensity += (questionCount * 0.05);
-    intensity += (capsRatio * 0.3);
-
-    return intensity.clamp(0.0, 1.0);
-  }
-
-  double _calculateContextualWeight(int position, int totalMessages) {
-    // Recent messages have higher weight
-    if (totalMessages <= 1) return 1.0;
-
-    final recencyFactor = 1.0 - (position / totalMessages);
-    return 0.5 + (recencyFactor * 0.5);
+    return sqrt(variance);
   }
 }

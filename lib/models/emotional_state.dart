@@ -128,6 +128,111 @@ enum ResponseTone {
   gentle,
 }
 
+enum EmotionalTrend { improving, stable, declining }
+
+extension EmotionalTrendExtension on EmotionalTrend {
+  String get displayName {
+    switch (this) {
+      case EmotionalTrend.improving:
+        return 'Improving';
+      case EmotionalTrend.stable:
+        return 'Stable';
+      case EmotionalTrend.declining:
+        return 'Declining';
+    }
+  }
+}
+
+/// Real-time emotional analysis result
+class RealTimeEmotionalAnalysis {
+  final String sessionId;
+  final DateTime timestamp;
+  final List<EmotionalState> recentStates;
+  final EmotionalTrend trend;
+  final double confidence;
+  final Map<String, dynamic> patterns;
+
+  const RealTimeEmotionalAnalysis({
+    required this.sessionId,
+    required this.timestamp,
+    required this.recentStates,
+    required this.trend,
+    required this.confidence,
+    required this.patterns,
+  });
+
+  factory RealTimeEmotionalAnalysis.fromJson(Map<String, dynamic> json) {
+    return RealTimeEmotionalAnalysis(
+      sessionId: json['sessionId'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      recentStates: (json['recentStates'] as List<dynamic>)
+          .map((e) => EmotionalState.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      trend: EmotionalTrend.values.firstWhere(
+        (e) => e.name == json['trend'],
+        orElse: () => EmotionalTrend.stable,
+      ),
+      confidence: (json['confidence'] as num).toDouble(),
+      patterns: json['patterns'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'sessionId': sessionId,
+    'timestamp': timestamp.toIso8601String(),
+    'recentStates': recentStates.map((e) => e.toJson()).toList(),
+    'trend': trend.name,
+    'confidence': confidence,
+    'patterns': patterns,
+  };
+}
+
+/// Enhanced emotional context for messages
+class EnhancedEmotionalContext {
+  final EmotionalState primaryState;
+  final List<EmotionalState> contextualStates;
+  final ResponseTone recommendedTone;
+  final Map<String, dynamic> voiceToneAnalysis;
+  final Map<String, dynamic> patternAnalysis;
+  final double emotionalComplexity;
+
+  const EnhancedEmotionalContext({
+    required this.primaryState,
+    required this.contextualStates,
+    required this.recommendedTone,
+    required this.voiceToneAnalysis,
+    required this.patternAnalysis,
+    required this.emotionalComplexity,
+  });
+
+  factory EnhancedEmotionalContext.fromJson(Map<String, dynamic> json) {
+    return EnhancedEmotionalContext(
+      primaryState: EmotionalState.fromJson(
+        json['primaryState'] as Map<String, dynamic>,
+      ),
+      contextualStates: (json['contextualStates'] as List<dynamic>)
+          .map((e) => EmotionalState.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recommendedTone: ResponseTone.values.firstWhere(
+        (e) => e.name == json['recommendedTone'],
+        orElse: () => ResponseTone.professional,
+      ),
+      voiceToneAnalysis: json['voiceToneAnalysis'] as Map<String, dynamic>,
+      patternAnalysis: json['patternAnalysis'] as Map<String, dynamic>,
+      emotionalComplexity: (json['emotionalComplexity'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'primaryState': primaryState.toJson(),
+    'contextualStates': contextualStates.map((e) => e.toJson()).toList(),
+    'recommendedTone': recommendedTone.name,
+    'voiceToneAnalysis': voiceToneAnalysis,
+    'patternAnalysis': patternAnalysis,
+    'emotionalComplexity': emotionalComplexity,
+  };
+}
+
 extension SentimentTypeExtension on SentimentType {
   String get displayName {
     switch (this) {

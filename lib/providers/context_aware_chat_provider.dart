@@ -7,7 +7,6 @@ import '../models/conversation_context.dart';
 import '../models/message.dart';
 import '../models/chat_session.dart';
 import '../models/emotional_state.dart';
-import '../models/ai_response.dart';
 import '../services/persistent_memory_service.dart';
 import '../services/situational_awareness_service.dart';
 import '../services/intent_prediction_service.dart';
@@ -16,6 +15,7 @@ import '../services/emotional_memory_service.dart';
 import '../services/ai_evaluation_service.dart';
 import '../services/sentiment_analysis_service.dart';
 import '../services/context_management_service.dart';
+import '../services/config_service.dart';
 
 /// Enhanced chat provider with true context awareness and memory capabilities
 /// Integrates persistent memory, situational awareness, and intent prediction
@@ -56,6 +56,7 @@ class ContextAwareChatProvider extends ChangeNotifier {
   bool _enableIntentPrediction = true;
   bool _enableSituationalAwareness = true;
   bool _enableEmotionalIntelligence = true;
+  bool _systemInstructionsSent = false;
 
   // Getters
   UserProfile? get currentUser => _currentUser;
@@ -128,8 +129,6 @@ class ContextAwareChatProvider extends ChangeNotifier {
       if (_currentUser == null) {
         // Create new user profile with device information
         final deviceInfo = _awarenessService.currentDeviceInfo;
-        final environmentalContext =
-            _awarenessService.currentEnvironmentalContext;
 
         _currentUser = UserProfile(
           id: _currentUserId!,
@@ -246,6 +245,8 @@ class ContextAwareChatProvider extends ChangeNotifier {
           'session_type': 'new_session',
           'greeting_delivered': false,
           'initial_context': true,
+          'system_instructions_sent':
+              false, // Track if we've sent initial AI instructions
         },
       );
 
@@ -578,6 +579,12 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
       // Build enhanced conversation history
       final conversationHistory = _buildEnhancedConversationHistory();
+
+      // Save context if system instructions were sent for the first time
+      if (_systemInstructionsSent && _currentContext != null) {
+        await _memoryService.saveConversationContext(_currentContext!);
+        _systemInstructionsSent = false; // Reset flag
+      }
 
       // Get AI response using the existing AI evaluation service
       final evaluationResult = await _aiEvaluationService
@@ -986,19 +993,8 @@ class ContextAwareChatProvider extends ChangeNotifier {
 
     if (deviceInfo == null || environmentalContext == null) return content;
 
-    // Add device context if relevant
-    if (content.toLowerCase().contains('device') ||
-        content.toLowerCase().contains('platform')) {
-      content +=
-          '\n\n[Context: I\'m using ${deviceInfo.platform} on ${deviceInfo.deviceModel}]';
-    }
-
-    // Add time context if relevant
-    if (content.toLowerCase().contains('time') ||
-        content.toLowerCase().contains('when')) {
-      content +=
-          '\n\n[Context: Current time context - ${environmentalContext.timeOfDay} on ${environmentalContext.dayOfWeek}]';
-    }
+    // Context information is now handled internally without visible markers
+    // The AI system will naturally understand context without explicit instructions
 
     return content;
   }
@@ -1023,48 +1019,145 @@ class ContextAwareChatProvider extends ChangeNotifier {
     }
   }
 
-  /// Build enhanced conversation history with context
+  /// Build enhanced conversation history with context and persistent memory
   List<Map<String, dynamic>> _buildEnhancedConversationHistory() {
+    final history = <Map<String, dynamic>>[];
+
     if (!_enableContextAwareness) {
-      // Fallback to basic context management
-      return ContextManagementService.getOptimalContextMessages(
-            _currentMessages,
-          )
+      // Fallback to basic context management with proper format
+      final basicMessages = ContextManagementService.getOptimalContextMessages(
+        _currentMessages,
+      );
+      return basicMessages
           .map(
             (msg) => {
               'role': msg.type == MessageType.user ? 'user' : 'assistant',
-              'content': msg.content,
+              'content': [
+                {'type': 'text', 'text': msg.content},
+              ],
               'images': msg.imagePaths,
             },
           )
           .toList();
     }
 
-    final optimalMessages = ContextManagementService.getOptimalContextMessages(
-      _currentMessages,
-    );
+    try {
+      // Get optimal conversation messages first
+      final optimalMessages =
+          ContextManagementService.getOptimalContextMessages(_currentMessages);
 
-    return optimalMessages.map((msg) {
-      final messageMap = {
-        'role': msg.type == MessageType.user ? 'user' : 'assistant',
-        'content': msg.content,
-        'images': msg.imagePaths,
-        'timestamp': msg.timestamp.toIso8601String(),
-      };
+      // Add system prompt ONLY for the very first message in a NEW session
+      // This ensures AI understands its role without visible instructions to users
+      final isNewSession =
+          _currentSession != null &&
+          optimalMessages.isEmpty &&
+          _currentContext?.situationalContext['initial_context'] == true &&
+          _currentContext?.situationalContext['system_instructions_sent'] !=
+              true;
 
-      // Add emotional context if available
-      if (msg.emotionalContext != null) {
-        messageMap['emotional_context'] = {
-          'sentiment': msg.emotionalContext!.sentiment.name,
-          'intensity': msg.emotionalContext!.intensity,
-          'emotions': msg.emotionalContext!.emotions
-              .map((e) => e.name)
-              .toList(),
-        };
+      if (isNewSession) {
+        // Add the system prompt from config (this sets AI behavior)
+        final systemPrompt = ConfigService.getSystemPrompt();
+
+        history.add({
+          'role': 'system',
+          'content': [
+            {'type': 'text', 'text': systemPrompt},
+          ],
+          'timestamp': DateTime.now().toIso8601String(),
+          'metadata': {'type': 'initial_system_prompt'},
+        });
+
+        // Add minimal user context if available
+        if (_currentUser != null) {
+          final contextParts = <String>[];
+
+          if (_currentUser!.preferences.responseStyle != 'neutral') {
+            contextParts.add(
+              'User prefers ${_currentUser!.preferences.responseStyle} communication style',
+            );
+          }
+
+          if (_currentUser!.preferences.preferredLanguage != 'English') {
+            contextParts.add(
+              'User prefers ${_currentUser!.preferences.preferredLanguage} language',
+            );
+          }
+
+          if (contextParts.isNotEmpty) {
+            final userContextPrompt =
+                'Additional context: ${contextParts.join('. ')}.';
+
+            history.add({
+              'role': 'system',
+              'content': [
+                {'type': 'text', 'text': userContextPrompt},
+              ],
+              'timestamp': DateTime.now().toIso8601String(),
+              'metadata': {'type': 'user_context'},
+            });
+          }
+        }
+
+        // Mark that system instructions have been sent (will be saved after message processing)
+        if (_currentContext != null) {
+          _currentContext!.situationalContext['system_instructions_sent'] =
+              true;
+          _systemInstructionsSent = true; // Flag to save context later
+        }
       }
 
-      return messageMap;
-    }).toList();
+      // Add conversation messages without any visible enhancements
+      for (final msg in optimalMessages) {
+        final messageEntry = {
+          'role': msg.type == MessageType.user ? 'user' : 'assistant',
+          'content': [
+            {'type': 'text', 'text': msg.content},
+          ],
+          'timestamp': msg.timestamp.toIso8601String(),
+        };
+
+        // Add metadata (not visible to AI, just for internal tracking)
+        if (msg.imagePaths.isNotEmpty) {
+          messageEntry['images'] = msg.imagePaths;
+        }
+
+        if (msg.type == MessageType.ai) {
+          if (msg.aiModel != null) messageEntry['ai_model'] = msg.aiModel!;
+          if (msg.confidence != null)
+            messageEntry['confidence'] = msg.confidence!;
+        }
+
+        // Store emotional context metadata for internal use (not sent to AI)
+        if (msg.emotionalContext != null) {
+          messageEntry['_internal_emotion'] =
+              msg.emotionalContext!.sentiment.name;
+          messageEntry['_internal_intensity'] = msg.emotionalContext!.intensity;
+        }
+
+        history.add(messageEntry);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error building enhanced conversation history: $e');
+      }
+      // Fallback to basic history with proper format
+      final optimalMessages =
+          ContextManagementService.getOptimalContextMessages(_currentMessages);
+      return optimalMessages
+          .map(
+            (msg) => {
+              'role': msg.type == MessageType.user ? 'user' : 'assistant',
+              'content': [
+                {'type': 'text', 'text': msg.content},
+              ],
+              'images': msg.imagePaths,
+            },
+          )
+          .toList();
+    }
+
+    return history;
   }
 
   /// Update session after message exchange

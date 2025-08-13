@@ -70,13 +70,12 @@ class GeminiService implements AIService {
       // Build current message content
       final List<Map<String, dynamic>> parts = [];
 
-      // Add enhanced text content
-      final promptText = _buildEnhancedPrompt(
-        query,
-        extractedText,
-        conversationHistory,
-      );
-      parts.add({'text': promptText});
+      // Add current user query as simple text (context is handled by conversation history)
+      String currentQuery = query;
+      if (extractedText != null && extractedText.isNotEmpty) {
+        currentQuery += '\n\nExtracted text from image: $extractedText';
+      }
+      parts.add({'text': currentQuery});
 
       // Add images if provided (Gemini format)
       if (images != null && images.isNotEmpty) {
@@ -167,54 +166,6 @@ class GeminiService implements AIService {
   }
 
   // Enhanced prompt building with context awareness
-  String _buildEnhancedPrompt(
-    String query,
-    String? extractedText,
-    List<Map<String, dynamic>>? conversationHistory,
-  ) {
-    String prompt = '';
-
-    // Add system-like instructions at the beginning
-    prompt += ConfigService.getSystemPrompt();
-    prompt += '\n\n';
-
-    // Add contextual awareness
-    if (conversationHistory != null && conversationHistory.isNotEmpty) {
-      final hasImages = conversationHistory.any(
-        (msg) =>
-            msg['content'] is List &&
-            (msg['content'] as List).any(
-              (content) =>
-                  content['type'] == 'image_url' ||
-                  content.containsKey('inline_data'),
-            ),
-      );
-
-      if (hasImages) {
-        prompt += 'Building on our previous image analysis and discussion:\n\n';
-      } else {
-        prompt += 'Continuing our conversation:\n\n';
-      }
-    }
-
-    prompt += 'Current query: $query\n\n';
-
-    if (extractedText != null && extractedText.isNotEmpty) {
-      prompt += 'Extracted text from current image(s):\n$extractedText\n\n';
-    }
-
-    prompt += '''
-Please provide a comprehensive response that:
-- Directly addresses the current query
-- Maintains awareness of our conversation context
-- Incorporates any visual information from images
-- Builds upon previous discussion points when relevant
-- Is detailed, accurate, and conversational
-''';
-
-    return prompt;
-  }
-
   // Get MIME type for better image handling
   String _getMimeType(String filePath) {
     final extension = filePath.toLowerCase().split('.').last;

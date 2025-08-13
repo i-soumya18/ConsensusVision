@@ -66,6 +66,9 @@ dependencies:
   # JSON handling
   json_annotation: ^4.8.1
   
+  # Cryptographic functions for caching
+  crypto: ^3.0.3
+  
   # Date formatting
   intl: ^0.19.0
   
